@@ -68,7 +68,10 @@ class InstallationController extends Controller
         }
 
         $installations = $query->latest()->get();
-        return view('dashboard.installations.index', compact('installations'));
+        $employees = \App\Models\User::all(['id', 'name', 'role']);
+        $selectedEmployee = $request->get('manager_id') ? \App\Models\User::find($request->get('manager_id')) : null;
+        
+        return view('dashboard.installations.index', compact('installations', 'employees', 'selectedEmployee'));
     }
 
     public function create()
@@ -76,7 +79,11 @@ class InstallationController extends Controller
         if (!$this->canManageInstallations()) {
             return redirect()->back()->with('error', 'У вас нет доступа к созданию установок');
         }
-        return view('dashboard.installations.create');
+        
+        $orders = \App\Models\Order::where('status', '!=', 'completed')->get(['id', 'order_number', 'customer_name']);
+        $installers = \App\Models\User::where('role', 'installer')->get(['id', 'name']);
+        
+        return view('dashboard.installations.create', compact('orders', 'installers'));
     }
 
     public function store(Request $request)
@@ -110,7 +117,11 @@ class InstallationController extends Controller
         if (!$this->canManageInstallations()) {
             return redirect()->back()->with('error', 'У вас нет доступа к редактированию установок');
         }
-        return view('dashboard.installations.edit', compact('installation'));
+        
+        $orders = \App\Models\Order::all(['id', 'order_number', 'customer_name']);
+        $installers = \App\Models\User::where('role', 'installer')->get(['id', 'name']);
+        
+        return view('dashboard.installations.edit', compact('installation', 'orders', 'installers'));
     }
 
     public function update(Request $request, Installation $installation)

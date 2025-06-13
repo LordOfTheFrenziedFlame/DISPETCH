@@ -13,7 +13,7 @@
                 <div class="form-group">
                     <label for="order_id">Заказ</label>
                     <select class="form-control" id="order_id" name="order_id" required>
-                        @foreach(\App\Models\Order::all() as $order)
+                        @foreach($orders as $order)
                             <option value="{{ $order->id }}" {{ $order->id == old('order_id', $measurement->order_id) ? 'selected' : '' }}>
                                 Заказ #{{ $order->order_number }} - {{ $order->customer_name }}
                             </option>
@@ -23,7 +23,7 @@
                 <div class="form-group">
                     <label for="surveyor_id">Замерщик</label>
                     <select class="form-control" id="surveyor_id" name="surveyor_id" required>
-                        @foreach(\App\Models\User::where('role', 'surveyor')->get() as $surveyor)
+                        @foreach($surveyors as $surveyor)
                             <option value="{{ $surveyor->id }}" {{ $surveyor->id == old('surveyor_id', $measurement->surveyor_id) ? 'selected' : '' }}>
                                 {{ $surveyor->name }}
                             </option>

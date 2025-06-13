@@ -72,6 +72,9 @@ class MeasurementController extends Controller
             }
         )->get();
 
+        $employees = User::all(['id', 'name', 'role']);
+        $selectedEmployee = $request->get('currentUserMeasurements') ? User::find($request->get('currentUserMeasurements')) : null;
+
         return view('dashboard.measurements.index', [
             'measurements' => $measurements,
             'grouped' => $grouped,
@@ -81,6 +84,8 @@ class MeasurementController extends Controller
             'dateField' => 'measured_at',
             'surveyors' => $surveyors,
             'attachments' => $attachments,
+            'employees' => $employees,
+            'selectedEmployee' => $selectedEmployee,
         ]);
     }
 
@@ -134,7 +139,11 @@ class MeasurementController extends Controller
         if (!$this->canManageMeasurements()) {
             return redirect()->back()->with('error', 'У вас нет доступа к редактированию замеров');
         }
-        return view('dashboard.measurements.edit', compact('measurement'));
+        
+        $orders = Order::all(['id', 'order_number', 'customer_name']);
+        $surveyors = User::where('role', 'surveyor')->get(['id', 'name']);
+        
+        return view('dashboard.measurements.edit', compact('measurement', 'orders', 'surveyors'));
     }
 
     public function update(Request $request, Measurement $measurement)

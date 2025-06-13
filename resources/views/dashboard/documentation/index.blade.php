@@ -19,11 +19,7 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="card-title">
             Документация
-            @if(request('manager_id'))
-                @php
-                    $selectedEmployee = \App\Models\User::find(request('manager_id'));
-                @endphp
-                @if($selectedEmployee)
+            @if(request('manager_id') && $selectedEmployee)
                     <small class="text-muted">- {{ $selectedEmployee->name }}
                         @if($selectedEmployee->role === 'manager')
                             (Менеджер)
@@ -35,7 +31,6 @@
                             (Монтажник)
                         @endif
                     </small>
-                @endif
             @endif
         </h3>
         <div class="btn-group">
@@ -60,7 +55,7 @@
                     <i class="fe fe-user"></i> Фильтр по сотрудникам
                 </button>
                 <div class="dropdown-menu" aria-labelledby="sortEmployeeDropdown">
-                    @foreach(\App\Models\User::all() as $employee)
+                    @foreach($employees as $employee)
                         <a class="dropdown-item {{ request('manager_id') == $employee->id ? 'active' : '' }}" href="{{ route('employee.documentations.index', ['manager_id' => $employee->id]) }}">
                             {{ $employee->name }} 
                             <small class="text-muted">

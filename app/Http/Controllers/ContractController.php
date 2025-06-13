@@ -31,7 +31,10 @@ class ContractController extends Controller
             [Contract::class],
         )->get();
 
-        return view('dashboard.contract.index', compact('contracts', 'attachments'));
+        $employees = \App\Models\User::all(['id', 'name', 'role']);
+        $selectedEmployee = request('manager_id') ? \App\Models\User::find(request('manager_id')) : null;
+
+        return view('dashboard.contract.index', compact('contracts', 'attachments', 'employees', 'selectedEmployee'));
     }
 
     public function create()
@@ -41,8 +44,9 @@ class ContractController extends Controller
         }
         
         $orders = \App\Models\Order::where('status', '!=', 'completed')->get(['id', 'order_number', 'customer_name']);
+        $constructors = \App\Models\User::where('role', 'constructor')->get(['id', 'name']);
         
-        return view('dashboard.contract.create', compact('orders'));
+        return view('dashboard.contract.create', compact('orders', 'constructors'));
     }
 
     public function show(Contract $contract)
@@ -58,7 +62,11 @@ class ContractController extends Controller
         if (!$this->canManageContracts()) {
             return redirect()->back()->with('error', 'У вас нет доступа к редактированию договоров');
         }
-        return view('dashboard.contract.edit', compact('contract'));
+        
+        $orders = \App\Models\Order::all(['id', 'order_number', 'customer_name']);
+        $constructors = \App\Models\User::where('role', 'constructor')->get(['id', 'name']);
+        
+        return view('dashboard.contract.edit', compact('contract', 'orders', 'constructors'));
     }
 
     public function update(Request $request, Contract $contract)

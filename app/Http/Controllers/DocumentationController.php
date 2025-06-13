@@ -77,7 +77,10 @@ class DocumentationController extends Controller
         }
 
         $documentations = $query->latest()->get();
-        return view('dashboard.documentation.index', compact('documentations'));
+        $employees = \App\Models\User::all(['id', 'name', 'role']);
+        $selectedEmployee = $request->get('manager_id') ? \App\Models\User::find($request->get('manager_id')) : null;
+        
+        return view('dashboard.documentation.index', compact('documentations', 'employees', 'selectedEmployee'));
     }
 
     public function create()
@@ -86,7 +89,10 @@ class DocumentationController extends Controller
             return redirect()->route('employee.orders.index');
         }
 
-        return view('dashboard.documentation.create');
+        $orders = \App\Models\Order::where('status', '!=', 'completed')->get(['id', 'order_number', 'customer_name']);
+        $constructors = \App\Models\User::where('role', 'constructor')->get(['id', 'name']);
+
+        return view('dashboard.documentation.create', compact('orders', 'constructors'));
     }
 
     public function show(Documentation $documentation)
@@ -133,7 +139,10 @@ class DocumentationController extends Controller
             return redirect()->back()->with('error', 'Вы можете редактировать только документацию по своим заказам');
         }
 
-        return view('dashboard.documentation.edit', compact('documentation'));
+        $orders = \App\Models\Order::all(['id', 'order_number', 'customer_name']);
+        $constructors = \App\Models\User::where('role', 'constructor')->get(['id', 'name']);
+
+        return view('dashboard.documentation.edit', compact('documentation', 'orders', 'constructors'));
     }
 
     public function store(Request $request)

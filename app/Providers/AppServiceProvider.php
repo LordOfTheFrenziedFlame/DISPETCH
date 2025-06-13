@@ -14,6 +14,8 @@ use App\Models\Documentation;
 use App\Observers\DocumentationObserver;
 use App\Models\Installation;
 use App\Observers\InstallationObserver;
+use App\Models\Production;
+use App\Observers\ProductionObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -35,5 +37,6 @@ class AppServiceProvider extends ServiceProvider
         Contract::observe(ContractObserver::class);
         Documentation::observe(DocumentationObserver::class);
         Installation::observe(InstallationObserver::class);
+        Production::observe(ProductionObserver::class);
     }
 }

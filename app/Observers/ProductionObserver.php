@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Production;
 use App\Models\Installation;
+use Illuminate\Support\Facades\Log;
 
 class ProductionObserver
 {
@@ -27,13 +28,15 @@ class ProductionObserver
             if ($order && !$order->installation) {
                 Installation::create([
                     'order_id' => $order->id,
-                    'installer_id' => $order->installer_id ?? null, // Установщик должен быть назначен в заказе
+                    'installer_id' => $order->installer_id,
                     'documentation_id' => $order->documentation->id ?? null,
                 ]);
 
-                // Оставляем статус in_progress до завершения установки
-                // $order->status = 'in_progress'; // уже такой статус
-                // $order->save(); // не нужно менять статус
+                Log::info('Автоматически создана установка', [
+                    'production_id' => $production->id,
+                    'order_id' => $order->id,
+                    'installer_id' => $order->installer_id
+                ]);
             }
         }
     }

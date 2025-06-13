@@ -33,7 +33,7 @@
         <label for="manager_id">Менеджер</label>
         <select class="form-control" id="manager_id" name="manager_id" required>
             <!-- Assuming you have a list of managers to populate here -->
-            @foreach(\App\Models\User::where('role', 'manager')->get() as $manager)
+            @foreach($managers as $manager)
                 <option value="{{ $manager->id }}" {{ $manager->id == old('manager_id', $order->manager_id) ? 'selected' : '' }}>
                     {{ $manager->name }}
                 </option>
@@ -45,13 +45,13 @@
         <select class="form-control" id="surveyor_id" name="surveyor_id">
             <option value="">Выберите замерщика</option>
             @if(auth('employees')->user()->role === 'manager')
-                @foreach(\App\Models\User::all() as $user)
+                @foreach($allUsers as $user)
                     <option value="{{ $user->id }}" {{ $user->id == old('surveyor_id', $order->surveyor_id) ? 'selected' : '' }}>
                         {{ $user->name }} ({{ ucfirst($user->role) }})
                     </option>
                 @endforeach
             @else
-                @foreach(\App\Models\User::where('role', 'surveyor')->get() as $surveyor)
+                @foreach($surveyors as $surveyor)
                     <option value="{{ $surveyor->id }}" {{ $surveyor->id == old('surveyor_id', $order->surveyor_id) ? 'selected' : '' }}>
                         {{ $surveyor->name }}
                     </option>
@@ -64,13 +64,13 @@
         <select class="form-control" id="constructor_id" name="constructor_id">
             <option value="">Выберите конструктора</option>
             @if(auth('employees')->user()->role === 'manager')
-                @foreach(\App\Models\User::all() as $user)
+                @foreach($allUsers as $user)
                     <option value="{{ $user->id }}" {{ $user->id == old('constructor_id', $order->constructor_id) ? 'selected' : '' }}>
                         {{ $user->name }} ({{ ucfirst($user->role) }})
                     </option>
                 @endforeach
             @else
-                @foreach(\App\Models\User::where('role', 'constructor')->get() as $constructor)
+                @foreach($constructors as $constructor)
                     <option value="{{ $constructor->id }}" {{ $constructor->id == old('constructor_id', $order->constructor_id) ? 'selected' : '' }}>
                         {{ $constructor->name }}
                     </option>
@@ -83,13 +83,13 @@
         <select class="form-control" id="installer_id" name="installer_id">
             <option value="">Выберите установщика</option>
             @if(auth('employees')->user()->role === 'manager')
-                @foreach(\App\Models\User::all() as $user)
+                @foreach($allUsers as $user)
                     <option value="{{ $user->id }}" {{ $user->id == old('installer_id', $order->installer_id) ? 'selected' : '' }}>
                         {{ $user->name }} ({{ ucfirst($user->role) }})
                     </option>
                 @endforeach
             @else
-                @foreach(\App\Models\User::where('role', 'installer')->get() as $installer)
+                @foreach($installers as $installer)
                     <option value="{{ $installer->id }}" {{ $installer->id == old('installer_id', $order->installer_id) ? 'selected' : '' }}>
                         {{ $installer->name }}
                     </option>

@@ -28,9 +28,6 @@
         <h3 class="card-title">
             Производство
             @if(request('manager_id'))
-                @php
-                    $selectedEmployee = \App\Models\User::find(request('manager_id'));
-                @endphp
                 @if($selectedEmployee)
                     <small class="text-muted">- {{ $selectedEmployee->name }}
                         @if($selectedEmployee->role === 'manager')
@@ -60,7 +57,7 @@
                     <i class="fe fe-user"></i> Фильтр по менеджерам
                 </button>
                 <div class="dropdown-menu" aria-labelledby="sortEmployeeDropdown">
-                    @foreach(\App\Models\User::where('role', 'manager')->get() as $employee)
+                    @foreach($employees as $employee)
                         <a class="dropdown-item {{ request('manager_id') == $employee->id ? 'active' : '' }}" href="{{ route('employee.productions.index', ['manager_id' => $employee->id]) }}">
                             {{ $employee->name }} 
                             <small class="text-muted">(Менеджер)</small>
@@ -81,6 +78,7 @@
                     <th>№ Заказа</th>
                     <th>Клиент</th>
                     <th>Адрес</th>
+                    <th>Установщик</th>
                     <th>Статус</th>
                     <th>Действия</th>
                 </tr>
@@ -98,13 +96,21 @@
                             <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ $production->order->address }}</a>
                         </td>
                         <td>
+                            @if($production->order->installer)
+                                <span class="badge badge-info">{{ $production->order->installer->name }}</span>
+                            @else
+                                <span class="badge badge-danger">Не назначен</span>
+                            @endif
+                        </td>
+                        <td>
                             <span class="badge badge-warning my-3">В производстве</span>
                         </td>
                         <td>
                             <a href="{{ route('employee.orders.show', $production->order) }}" class="btn btn-sm btn-outline-info">
                                 <i class="fe fe-eye"></i>
                             </a>
-                            <button type="button" class="btn btn-sm btn-outline-success" data-toggle="modal" data-target="#completeProductionModal{{ $production->id }}">
+                            <button type="button" class="btn btn-sm btn-outline-success" data-toggle="modal" data-target="#completeProductionModal{{ $production->id }}"
+                                {{ !$production->order->installer_id ? 'disabled title="Сначала назначьте установщика в заказе"' : '' }}>
                                 <i class="fe fe-check"></i>
                             </button>
                         </td>
@@ -123,6 +129,13 @@
                                     <p><strong>Клиент:</strong> {{ $production->order->customer_name }}</p>
                                     <p><strong>Адрес:</strong> {{ $production->order->address }}</p>
                                     <p><strong>Менеджер:</strong> {{ $production->order->manager->name ?? '—' }}</p>
+                                    <p><strong>Установщик:</strong> 
+                                        @if($production->order->installer)
+                                            <span class="badge badge-info">{{ $production->order->installer->name }}</span>
+                                        @else
+                                            <span class="badge badge-danger">Не назначен</span>
+                                        @endif
+                                    </p>
                                     <p><strong>Заметки производства:</strong> {{ $production->notes ?? '—' }}</p>
                                     <p><strong>Статус:</strong> <span class="badge badge-warning">В производстве</span></p>
                                 </div>
@@ -143,14 +156,24 @@
                                 <form action="{{ route('employee.productions.complete', $production) }}" method="POST">
                                     @csrf
                                     <div class="modal-body">
+                                        <div class="alert alert-info">
+                                            <strong>Установщик:</strong> 
+                                            @if($production->order->installer)
+                                                {{ $production->order->installer->name }}
+                                            @else
+                                                <span class="text-danger">Не назначен! Сначала назначьте установщика в заказе.</span>
+                                            @endif
+                                        </div>
                                         <div class="form-group">
                                             <label for="notes{{ $production->id }}">Заметки (необязательно)</label>
-                                            <textarea name="notes" id="notes{{ $production->id }}" class="form-control" rows="3"></textarea>
+                                            <textarea name="notes" id="notes{{ $production->id }}" class="form-control" rows="3" placeholder="Заметки по завершению производства"></textarea>
                                         </div>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
-                                        <button type="submit" class="btn btn-success">Завершить производство</button>
+                                        <button type="submit" class="btn btn-success" {{ !$production->order->installer_id ? 'disabled' : '' }}>
+                                            Завершить производство
+                                        </button>
                                     </div>
                                 </form>
                             </div>

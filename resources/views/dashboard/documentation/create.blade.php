@@ -13,7 +13,7 @@
                     <label class="form-label">Заказ</label>
                     <select class="form-select" name="order_id" required>
                         <option value="">Выберите заказ</option>
-                        @foreach(\App\Models\Order::where('status', '!=', 'completed')->get() as $order)
+                        @foreach($orders as $order)
                             <option value="{{ $order->id }}">
                                 Заказ #{{ $order->order_number }} - {{ $order->customer_name }}
                             </option>
@@ -24,7 +24,7 @@
                     <label class="form-label">Конструктор</label>
                     <select class="form-select" name="constructor_id" required>
                         <option value="">Выберите конструктора</option>
-                        @foreach(\App\Models\User::where('role', 'constructor')->get() as $constructor)
+                        @foreach($constructors as $constructor)
                             <option value="{{ $constructor->id }}">{{ $constructor->name }}</option>
                         @endforeach
                     </select>

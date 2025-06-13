@@ -20,6 +20,9 @@ class OrderController extends Controller
         return [
             'managers' => \App\Models\User::where('role', 'manager')->get(['id', 'name']),
             'surveyors' => \App\Models\User::where('role', 'surveyor')->get(['id', 'name']),
+            'constructors' => \App\Models\User::where('role', 'constructor')->get(['id', 'name']),
+            'installers' => \App\Models\User::where('role', 'installer')->get(['id', 'name']),
+            'allUsers' => \App\Models\User::all(['id', 'name', 'role']),
         ];
     }
 

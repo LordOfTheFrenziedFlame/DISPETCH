@@ -45,6 +45,10 @@ class Order extends Model
         return $this->hasOne(Documentation::class);
     }
 
+    public function production() {
+        return $this->hasOne(Production::class);
+    }
+
     public function installation() {
         return $this->hasOne(Installation::class);
     }

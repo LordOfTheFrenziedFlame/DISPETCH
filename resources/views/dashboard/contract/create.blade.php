@@ -24,7 +24,7 @@
                     <label class="form-label">Конструктор</label>
                     <select class="form-select" name="constructor_id" required>
                         <option value="">Выберите конструктора</option>
-                        @foreach(\App\Models\User::where('role', 'constructor')->get() as $constructor)
+                        @foreach($constructors as $constructor)
                             <option value="{{ $constructor->id }}">{{ $constructor->name }}</option>
                         @endforeach
                     </select>

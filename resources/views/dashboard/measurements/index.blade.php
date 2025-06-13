@@ -19,11 +19,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h3 class="card-title">
                 Замеры
-                @if(request('currentUserMeasurements'))
-                    @php
-                        $selectedEmployee = \App\Models\User::find(request('currentUserMeasurements'));
-                    @endphp
-                    @if($selectedEmployee)
+                            @if(request('currentUserMeasurements') && $selectedEmployee)
                         <small class="text-muted">- {{ $selectedEmployee->name }} 
                             @if($selectedEmployee->role === 'manager')
                                 (Менеджер)
@@ -33,10 +29,9 @@
                                 (Конструктор)
                             @elseif($selectedEmployee->role === 'installer')
                                 (Монтажник)
-                            @endif
-                        </small>
-                    @endif
-                @endif
+                                                    @endif
+                    </small>
+            @endif
             </h3>
             <div class="btn-group">
                 <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#calendarModal">
@@ -59,27 +54,27 @@
                     <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" id="sortEmployeeDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i class="fe fe-user"></i> Фильтр по сотрудникам
                     </button>
-                    <div class="dropdown-menu" aria-labelledby="sortEmployeeDropdown">
-                        @foreach (\App\Models\User::all() as $employee)
-                            <a class="dropdown-item {{ request('currentUserMeasurements') == $employee->id ? 'active' : '' }}" href="{{ route('employee.measurements.index', ['currentUserMeasurements' => $employee->id]) }}">
-                                {{ $employee->name }} 
-                                <small class="text-muted">
-                                    @if($employee->role === 'manager')
-                                        (Менеджер)
-                                    @elseif($employee->role === 'surveyor')
-                                        (Замерщик)
-                                    @elseif($employee->role === 'constructor')
-                                        (Конструктор)
-                                    @elseif($employee->role === 'installer')
-                                        (Монтажник)
-                                    @endif
-                                </small>
-                                @if(request('currentUserMeasurements') == $employee->id)
-                                    <i class="fe fe-check ms-2"></i>
+                                    <div class="dropdown-menu" aria-labelledby="sortEmployeeDropdown">
+                    @foreach ($employees as $employee)
+                        <a class="dropdown-item {{ request('currentUserMeasurements') == $employee->id ? 'active' : '' }}" href="{{ route('employee.measurements.index', ['currentUserMeasurements' => $employee->id]) }}">
+                            {{ $employee->name }} 
+                            <small class="text-muted">
+                                @if($employee->role === 'manager')
+                                    (Менеджер)
+                                @elseif($employee->role === 'surveyor')
+                                    (Замерщик)
+                                @elseif($employee->role === 'constructor')
+                                    (Конструктор)
+                                @elseif($employee->role === 'installer')
+                                    (Монтажник)
                                 @endif
-                            </a>
-                        @endforeach
-                    </div>
+                            </small>
+                            @if(request('currentUserMeasurements') == $employee->id)
+                                <i class="fe fe-check ms-2"></i>
+                            @endif
+                        </a>
+                    @endforeach
+                </div>
                 </div>
             </div>
         </div>

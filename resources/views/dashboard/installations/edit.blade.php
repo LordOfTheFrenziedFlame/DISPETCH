@@ -13,7 +13,7 @@
                 <div class="form-group">
                     <label for="order_id">Заказ</label>
                     <select class="form-control" id="order_id" name="order_id" required>
-                        @foreach(\App\Models\Order::all() as $order)
+                        @foreach($orders as $order)
                             <option value="{{ $order->id }}" {{ $order->id == old('order_id', $installation->order_id) ? 'selected' : '' }}>
                                 Заказ #{{ $order->order_number }} - {{ $order->customer_name }}
                             </option>
@@ -35,7 +35,7 @@
                     <label for="installer_id">Установщик</label>
                     <select class="form-control" id="installer_id" name="installer_id">
                         <option value="">Выберите установщика</option>
-                        @foreach(\App\Models\User::where('role', 'installer')->get() as $installer)
+                        @foreach($installers as $installer)
                             <option value="{{ $installer->id }}" {{ $installer->id == old('installer_id', $installation->installer_id) ? 'selected' : '' }}>
                                 {{ $installer->name }}
                             </option>

@@ -11,22 +11,34 @@ class ProductionController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $productions = Production::with('order')->whereNull('completed_at')->get();
-        return view('dashboard.productions.index', compact('productions'));
+        $productions = Production::with(['order', 'order.installer'])->whereNull('completed_at')->get();
+        $employees = \App\Models\User::where('role', 'manager')->get(['id', 'name', 'role']);
+        $selectedEmployee = $request->get('manager_id') ? \App\Models\User::find($request->get('manager_id')) : null;
+        
+        return view('dashboard.productions.index', compact('productions', 'employees', 'selectedEmployee'));
     }
 
     public function complete(Production $production, Request $request)
     {
-        $request->validate(['notes' => 'nullable|string']);
+        $request->validate([
+            'notes' => 'nullable|string',
+        ]);
+
+        // Проверяем, что у заказа назначен установщик
+        if (!$production->order->installer_id) {
+            return redirect()->back()->with('error', 'Для завершения производства необходимо назначить установщика в заказе №' . $production->order->order_number);
+        }
         
         $production->update([
             'completed_at' => now(),
             'notes' => $request->notes,
         ]);
 
-        return redirect()->route('employee.productions.index')->with('success', 'Производство для заказа №' . $production->order->order_number . ' завершено.');
+        // Installation будет создана автоматически через ProductionObserver
+
+        return redirect()->route('employee.productions.index')->with('success', 'Производство для заказа №' . $production->order->order_number . ' завершено. Создана задача на установку.');
     }
 
     /**
