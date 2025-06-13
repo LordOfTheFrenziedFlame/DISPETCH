@@ -1,0 +1,309 @@
+# ===============================================
+# УЛЬТИМАТИВНЫЙ .GITIGNORE ДЛЯ LARAVEL + NODE.JS
+# ===============================================
+
+# ===== LARAVEL СПЕЦИФИЧНЫЕ ФАЙЛЫ =====
+/.phpunit.cache
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/storage/logs/*.log
+/storage/app/public/*
+!/storage/app/public/.gitkeep
+/storage/framework/cache/data/*
+!/storage/framework/cache/data/.gitkeep
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitkeep
+/storage/framework/testing/*
+!/storage/framework/testing/.gitkeep
+/storage/framework/views/*
+!/storage/framework/views/.gitkeep
+/bootstrap/cache/*.php
+/.phpunit.result.cache
+/auth.json
+
+# ===== PHP ЗАВИСИМОСТИ =====
+/vendor
+composer.phar
+composer-setup.php
+
+# ===== NODE.JS И NPM =====
+/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+package-lock.json.backup
+yarn.lock.backup
+.yarn-integrity
+.npm
+.eslintcache
+.pnp
+.pnp.js
+
+# ===== ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ =====
+.env
+.env.*
+!.env.example
+.env.backup
+.env.production
+.env.staging
+.env.testing
+.env.local
+.env.development
+
+# ===== БАЗЫ ДАННЫХ =====
+*.sqlite
+*.sqlite3
+*.db
+*.sql
+*.dump
+/database/*.sqlite
+/database/*.db
+/database/backups/*
+
+# ===== ЛОГИ =====
+*.log
+/logs/*
+/storage/logs/*
+laravel.log
+error.log
+access.log
+npm-debug.log
+yarn-error.log
+lerna-debug.log
+
+# ===== IDE И РЕДАКТОРЫ =====
+# PhpStorm / IntelliJ
+/.idea
+*.iml
+*.ipr
+*.iws
+.idea_modules/
+atlassian-ide-plugin.xml
+com_crashlytics_export_strings.xml
+crashlytics.properties
+crashlytics-build.properties
+fabric.properties
+
+# VS Code
+/.vscode
+.vscode/
+*.code-workspace
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+*.swp
+*.swo
+*~
+.vim/
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Eclipse
+/.project
+/.buildpath
+/.settings
+
+# NetBeans
+/nbproject/
+
+# ===== СИСТЕМНЫЕ ФАЙЛЫ =====
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.AppleDouble
+.LSOverride
+Icon
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ===== ВРЕМЕННЫЕ ФАЙЛЫ =====
+*.tmp
+*.temp
+*.bak
+*.backup
+*.swp
+*.cache
+*.pid
+*.lock
+*.~lock*
+.htaccess.bak
+
+# ===== СЕРТИФИКАТЫ И КЛЮЧИ =====
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+*.jks
+rsa_private_key
+rsa_public_key
+ssl/
+certs/
+keys/
+
+# ===== АРХИВЫ =====
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+*.gz
+*.bz2
+*.xz
+
+# ===== COVERAGE И ТЕСТИРОВАНИЕ =====
+/coverage
+/.nyc_output
+/coverage.xml
+/clover.xml
+/.phpunit.result.cache
+/build/logs
+/build/coverage
+*coverage*
+
+# ===== КЭШИ ИНСТРУМЕНТОВ =====
+# Composer
+.composer-cache/
+.composer/cache/
+
+# NPM/Yarn
+.npm/
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# PHP-CS-Fixer
+.php_cs.cache
+.php-cs-fixer.cache
+
+# PHPStan
+.phpstan.cache
+
+# Psalm
+.psalm_cache/
+
+# ===== DEVELOPMENT TOOLS =====
+# Laravel specific
+Homestead.json
+Homestead.yaml
+/.fleet
+/.nova
+/.zed
+.phpactor.json
+
+# Mix
+/public/mix-manifest.json
+
+# Hot Module Replacement
+*.hot-update.js
+*.hot-update.json
+hot-update.*
+
+# ===== DOCKER =====
+/.docker
+docker-compose.override.yml
+.dockerignore
+
+# ===== ОБЛАЧНЫЕ ПЛАТФОРМЫ =====
+# Vercel
+.vercel
+
+# Netlify
+.netlify
+
+# AWS
+.aws/
+
+# ===== ПРОФИЛИРОВАНИЕ И ДЕБАГ =====
+*.prof
+*.trace
+xdebug.profiler_output.*
+cachegrind.out.*
+profile.out
+
+# ===== МУЛЬТИМЕДИА ФАЙЛЫ (КРУПНЫЕ) =====
+*.mov
+*.mp4
+*.avi
+*.mkv
+*.webm
+*.flv
+*.psd
+*.ai
+*.sketch
+
+# ===== ЛОКАЛЬНЫЕ КОНФИГУРАЦИИ =====
+.devdbrc.local
+.phpunit.local.xml
+phpunit.local.xml
+.env.*.local
+
+# ===== ПРОЧЕЕ =====
+.htaccess
+.htpasswd
+.user.ini
+error_reporting
+.well-known/
+sitemap.xml
+robots.txt.backup
+*.orig
+*.rej
+*.patch
+
+# Временные файлы анализа
+N1_FIXES_RECOMMENDATIONS.md
+PRODUCTION_READINESS_REPORT.md
+
+# Deployment files (keep in repo but exclude logs)
+deploy.log
+deployment-*.log
+
+
+.devdbrc
+.devdbrc.*
