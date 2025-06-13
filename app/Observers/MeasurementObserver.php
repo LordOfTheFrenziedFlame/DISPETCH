@@ -20,30 +20,17 @@ class MeasurementObserver
      */
     public function updated(Measurement $measurement): void
     {
-        if($measurement->status === 'completed') {
-            if ($measurement->contract || Contract::where('order_id', $measurement->order_id)->exists()) {
-                return;
-            }
+        // Если замер завершен (появилась дата measured_at) и у заказа еще нет договора
+        if ($measurement->isDirty('measured_at') && !is_null($measurement->measured_at)) {
+            $order = $measurement->order;
 
-            // Определяем исполнителя для следующего этапа
-            $constructorId = $measurement->order->constructor_id;
-            
-            // Если конструктор не назначен, назначаем текущего пользователя (если это не менеджер)
-            if (!$constructorId && auth('employees')->check()) {
-                $currentUser = auth('employees')->user();
-                if ($currentUser->role !== 'manager') {
-                    $constructorId = $currentUser->id;
-                    // Обновляем заказ с назначенным конструктором
-                    $measurement->order->update(['constructor_id' => $constructorId]);
-                }
+            if ($order && !$order->contract) {
+                Contract::create([
+                    'order_id' => $order->id,
+                    'contract_number' => 'CN-' . $order->id . '-' . now()->timestamp,
+                    // Другие поля по умолчанию, если необходимо
+                ]);
             }
-
-            $contract = Contract::create([
-                'measurement_id' => $measurement->id,
-                'order_id' => $measurement->order_id,
-                'contract_number' => $measurement->order->order_number,
-                'constructor_id' => $constructorId,
-            ]);
         }
     }
 

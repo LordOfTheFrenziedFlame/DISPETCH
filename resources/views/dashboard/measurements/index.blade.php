@@ -29,9 +29,9 @@
                                 (Конструктор)
                             @elseif($selectedEmployee->role === 'installer')
                                 (Монтажник)
-                                                    @endif
-                    </small>
-            @endif
+                            @endif
+                        </small>
+                @endif
             </h3>
             <div class="btn-group">
                 <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#calendarModal">
@@ -54,27 +54,27 @@
                     <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" id="sortEmployeeDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i class="fe fe-user"></i> Фильтр по сотрудникам
                     </button>
-                                    <div class="dropdown-menu" aria-labelledby="sortEmployeeDropdown">
+                    <div class="dropdown-menu" aria-labelledby="sortEmployeeDropdown">
                     @foreach ($employees as $employee)
-                        <a class="dropdown-item {{ request('currentUserMeasurements') == $employee->id ? 'active' : '' }}" href="{{ route('employee.measurements.index', ['currentUserMeasurements' => $employee->id]) }}">
-                            {{ $employee->name }} 
-                            <small class="text-muted">
-                                @if($employee->role === 'manager')
-                                    (Менеджер)
-                                @elseif($employee->role === 'surveyor')
-                                    (Замерщик)
-                                @elseif($employee->role === 'constructor')
-                                    (Конструктор)
-                                @elseif($employee->role === 'installer')
-                                    (Монтажник)
+                            <a class="dropdown-item {{ request('currentUserMeasurements') == $employee->id ? 'active' : '' }}" href="{{ route('employee.measurements.index', ['currentUserMeasurements' => $employee->id]) }}">
+                                {{ $employee->name }} 
+                                <small class="text-muted">
+                                    @if($employee->role === 'manager')
+                                        (Менеджер)
+                                    @elseif($employee->role === 'surveyor')
+                                        (Замерщик)
+                                    @elseif($employee->role === 'constructor')
+                                        (Конструктор)
+                                    @elseif($employee->role === 'installer')
+                                        (Монтажник)
+                                    @endif
+                                </small>
+                                @if(request('currentUserMeasurements') == $employee->id)
+                                    <i class="fe fe-check ms-2"></i>
                                 @endif
-                            </small>
-                            @if(request('currentUserMeasurements') == $employee->id)
-                                <i class="fe fe-check ms-2"></i>
-                            @endif
-                        </a>
-                    @endforeach
-                </div>
+                            </a>
+                        @endforeach
+                    </div>
                 </div>
             </div>
         </div>

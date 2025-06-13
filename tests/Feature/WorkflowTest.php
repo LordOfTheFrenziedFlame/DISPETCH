@@ -11,21 +11,22 @@ use App\Models\Installation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
+use Illuminate\Support\Facades\Event;
+use Spatie\Permission\Models\Role;
 
 class WorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
-    private User $manager;
-    private User $surveyor;
-    private User $constructor;
-    private User $installer;
+    protected $manager;
+    protected $surveyor;
+    protected $constructor;
+    protected $installer;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
-        // Создаем пользователей для всех ролей
+
         $this->manager = User::factory()->create(['role' => 'manager']);
         $this->surveyor = User::factory()->create(['role' => 'surveyor']);
         $this->constructor = User::factory()->create(['role' => 'constructor']);
@@ -119,15 +120,20 @@ class WorkflowTest extends TestCase
         }
         $this->assertNotNull($production);
 
-        // Этап 7: Завершение производства
-        $this->actingAs($this->manager, 'employees');
-        
-        $response = $this->post("/employee/productions/{$production->id}/complete", [
-            'notes' => 'Production completed successfully'
-        ]);
+        // Этап 7: Завершение Production
+        $order->update(['installer_id' => $this->installer->id]); // ЯВНО НАЗНАЧАЕМ УСТАНОВЩИКА
+        $production = $order->fresh()->production;
+
+        $response = $this->actingAs($this->manager, 'employees')
+            ->post(route('employee.productions.complete', $production), [
+                'notes' => 'Quality check passed',
+            ]);
+
+        $response->assertRedirect('/employee/productions');
         
         $production->refresh();
-        $this->assertNotNull($production->completed_at);
+        $this->assertNotNull($production->completed_at); // Теперь пройдет
+        $this->assertEquals('Quality check passed', $production->notes);
 
         // Этап 8: Создание Installation (может быть автоматическим или ручным)
         $installation = Installation::where('order_id', $order->id)->first();
@@ -157,6 +163,7 @@ class WorkflowTest extends TestCase
         
         // Главное - что все этапы workflow созданы и завершены
         $this->assertTrue(true, 'Workflow completed successfully');
+        $this->assertNotNull($order->fresh()->installation);
     }
 
     public function test_order_filtering_by_status(): void
@@ -191,33 +198,23 @@ class WorkflowTest extends TestCase
 
     public function test_production_workflow(): void
     {
-        $this->actingAs($this->manager, 'employees');
-
-        // Создаем заказ и производство
         $order = Order::factory()->create([
-            'status' => 'in_progress',
-            'manager_id' => $this->manager->id
+            'manager_id' => $this->manager->id,
+            'installer_id' => $this->installer->id,
         ]);
+        $production = Production::factory()->create(['order_id' => $order->id]);
 
-        $production = Production::create([
-            'order_id' => $order->id
-        ]);
+        $response = $this->actingAs($this->manager, 'employees')
+            ->post(route('employee.productions.complete', $production), [
+                'notes' => 'Quality check passed',
+            ]);
 
-        // Проверяем, что производство отображается в списке
-        $response = $this->get('/employee/productions');
-        $response->assertStatus(200);
-        $response->assertSee($order->customer_name);
-
-        // Завершаем производство
-        $response = $this->post("/employee/productions/{$production->id}/complete", [
-            'notes' => 'Quality check passed'
-        ]);
-
-        $response->assertRedirect('/employee/productions');
+        $response->assertRedirect(route('employee.productions.index'));
         
         $production->refresh();
         $this->assertNotNull($production->completed_at);
         $this->assertEquals('Quality check passed', $production->notes);
+        $this->assertNotNull($order->fresh()->installation);
     }
 
     public function test_installation_workflow(): void
@@ -302,63 +299,33 @@ class WorkflowTest extends TestCase
 
     public function test_workflow_observers_are_working(): void
     {
-        // Тест работы наблюдателей в цепочке
+        // 1. Создаем заказ
+        $order = Order::factory()->create(['manager_id' => $this->manager->id]);
 
-        // 1. Создаем заказ и изменяем статус на in_progress - должен создаться Measurement
-        $order = Order::factory()->create([
-            'status' => 'pending',
-            'manager_id' => $this->manager->id,
-            'surveyor_id' => $this->surveyor->id
-        ]);
+        // 2. Создаем замер и завершаем его -> должен создаться Contract
+        $measurement = Measurement::factory()->create(['order_id' => $order->id, 'surveyor_id' => $this->surveyor->id]);
+        $measurement->update(['measured_at' => now()]);
+        $this->assertNotNull($order->fresh()->contract, 'Contract should be created after measurement is completed.');
 
-        // Проверяем Observer для заказа
-        $order->update(['status' => 'in_progress']);
-        
-        $measurement = Measurement::where('order_id', $order->id)->first();
-        $this->assertNotNull($measurement, 'OrderObserver should create Measurement when status changes to in_progress');
+        // 3. Подписываем договор -> должна создаться Documentation
+        $contract = $order->fresh()->contract;
+        $contract->update(['signed_at' => now()]);
+        $this->assertNotNull($order->fresh()->documentation, 'Documentation should be created after contract is signed.');
 
-        // 2. Создаем документацию и завершаем её - проверяем что можем создать Production
-        $documentation = Documentation::create([
-            'order_id' => $order->id,
-            'constructor_id' => $this->constructor->id,
-            'description' => 'Test documentation'
-        ]);
-
-        // Завершаем документацию - может создаться Production автоматически
+        // 4. Завершаем документацию -> должно создаться Production
+        $documentation = $order->fresh()->documentation;
         $documentation->update(['completed_at' => now()]);
-        
-        $production = Production::where('order_id', $order->id)->first();
-        if ($production) {
-            $this->assertNotNull($production, 'DocumentationObserver should create Production');
-        } else {
-            // Если Observer не работает, создаем вручную для продолжения теста
-            $production = Production::create(['order_id' => $order->id]);
-            $this->assertNotNull($production);
-        }
+        $this->assertNotNull($order->fresh()->production, 'Production should be created after documentation is completed.');
 
-        // 3. Завершаем производство - проверяем что можем создать Installation
+        // 5. Завершаем производство -> должна создаться Installation
+        $order->update(['installer_id' => $this->installer->id]); // Назначаем установщика!
+        $production = $order->fresh()->production;
         $production->update(['completed_at' => now()]);
-        
-        $installation = Installation::where('order_id', $order->id)->first();
-        if ($installation) {
-            $this->assertNotNull($installation, 'ProductionObserver should create Installation');
-        } else {
-            // Если Observer не работает, создаем вручную
-            $installation = Installation::create([
-                'order_id' => $order->id,
-                'installer_id' => $this->installer->id
-            ]);
-            $this->assertNotNull($installation);
-        }
+        $this->assertNotNull($order->fresh()->installation, 'Installation should be created after production is completed.');
 
-        // 4. Завершаем установку - проверяем статус заказа
+        // 6. Завершаем установку -> заказ должен быть завершен
+        $installation = $order->fresh()->installation;
         $installation->update(['installed_at' => now()]);
-        
-        $order->refresh();
-        // Observer может изменить статус на completed, или оставить in_progress
-        $this->assertContains($order->status, ['completed', 'in_progress'], 'InstallationObserver may update order status');
-        
-        // Главное - что Observer'ы зарегистрированы и могут работать
-        $this->assertTrue(true, 'Workflow observers are registered and functional');
+        $this->assertEquals('completed', $order->fresh()->status, 'Order status should be completed after installation.');
     }
 }

@@ -26,6 +26,8 @@ class ProductionController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        $production->load('order');
+
         // Проверяем, что у заказа назначен установщик
         if (!$production->order->installer_id) {
             return redirect()->back()->with('error', 'Для завершения производства необходимо назначить установщика в заказе №' . $production->order->order_number);
