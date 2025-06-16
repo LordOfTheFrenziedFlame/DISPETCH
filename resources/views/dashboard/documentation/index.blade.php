@@ -86,6 +86,7 @@
                     <th>№</th>
                     <th>Клиент</th>
                     <th>Адрес</th>
+                    <th>Конструктор</th>
                     <th>Дата завершения</th>
                     <th>Действия</th>
                 </tr>
@@ -107,6 +108,9 @@
                             <a href="#" data-toggle="modal" data-target="#showModal{{ $documentation->id }}">
                                 {{ optional($documentation->order)->address }}
                             </a>
+                        </td>
+                        <td>
+                            {{ optional($documentation->constructor)->name ?: '—' }}
                         </td>
                         <td>
                             <a href="#" data-toggle="modal" data-target="#showModal{{ $documentation->id }}">
@@ -216,15 +220,24 @@
                     {{-- Модалка подтверждения для менеджера --}}
                     <div class="modal fade" id="confirmModalManager{{ $documentation->id }}" tabindex="-1">
                         <div class="modal-dialog" role="document">
-                            <form method="POST" action="{{ route('employee.documentations.confirm', ['documentation' => $documentation->id, 'role' => 'manager']) }}">
+                            <form method="POST" action="{{ route('employee.documentations.confirm', ['documentation' => $documentation->id, 'role' => 'manager']) }}" enctype="multipart/form-data">
                                 @csrf
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title">Подтверждение</h5>
+                                        <h5 class="modal-title">Подтверждение документации</h5>
                                         <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                                     </div>
                                     <div class="modal-body">
                                         <p>Вы уверены, что хотите подтвердить документацию как менеджер?</p>
+                                        <div class="form-group">
+                                            <label for="media{{ $documentation->id }}">Прикрепить файлы</label>
+                                            <input type="file" name="media[]" id="media{{ $documentation->id }}" class="form-control-file" required multiple>
+                                            <small class="form-text text-muted">Необходимо прикрепить хотя бы один файл.</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="comment{{ $documentation->id }}">Комментарий</label>
+                                            <textarea name="comment" id="comment{{ $documentation->id }}" class="form-control" rows="3" placeholder="Комментарий к файлам (необязательно)"></textarea>
+                                        </div>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>

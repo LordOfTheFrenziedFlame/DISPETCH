@@ -8,7 +8,26 @@ class Contract extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['order_id', 'constructor_id', 'contract_number', 'signed_at', 'comment'];
+    protected $fillable = [
+        'order_id',
+        'constructor_id',
+        'contract_number',
+        'signed_at',
+        'comment',
+        'final_amount',
+        'documentation_due_at',
+        'installation_date',
+        'installation_days',
+        'product_type',
+        'ready_date',
+    ];
+
+    protected $casts = [
+        'signed_at' => 'datetime',
+        'documentation_due_at' => 'date',
+        'installation_date' => 'date',
+        'ready_date' => 'date',
+    ];
 
     public function order() {
         return $this->belongsTo(Order::class);

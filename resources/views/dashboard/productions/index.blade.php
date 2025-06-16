@@ -68,6 +68,9 @@
                     @endforeach
                 </div>
             </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#calendarModal">
+                <i class="fe fe-calendar"></i> Календарь
+            </button>
         </div>
     </div>
 
@@ -87,17 +90,17 @@
                 @foreach ($productions as $production)
                     <tr>
                         <td>
-                             <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ $production->order->order_number }}</a>
+                             <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ optional($production->order)->order_number ?: '—' }}</a>
                         </td>
                         <td>
-                            <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ $production->order->customer_name }}</a>
+                            <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ optional($production->order)->customer_name ?: '—' }}</a>
                         </td>
                         <td>
-                            <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ $production->order->address }}</a>
+                            <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ optional($production->order)->address ?: '—' }}</a>
                         </td>
                         <td>
-                            @if($production->order->installer)
-                                <span class="badge badge-info">{{ $production->order->installer->name }}</span>
+                            @if(optional($production->order)->installer)
+                                <span class="badge badge-info">{{ optional($production->order)->installer->name }}</span>
                             @else
                                 <span class="badge badge-danger">Не назначен</span>
                             @endif
@@ -106,12 +109,9 @@
                             <span class="badge badge-warning my-3">В производстве</span>
                         </td>
                         <td>
-                            <a href="{{ route('employee.orders.show', $production->order) }}" class="btn btn-sm btn-outline-info">
-                                <i class="fe fe-eye"></i>
-                            </a>
                             <button type="button" class="btn btn-sm btn-outline-success" data-toggle="modal" data-target="#completeProductionModal{{ $production->id }}"
-                                {{ !$production->order->installer_id ? 'disabled title="Сначала назначьте установщика в заказе"' : '' }}>
-                                <i class="fe fe-check"></i>
+                                {{ !optional($production->order)->installer_id ? 'disabled title="Сначала назначьте установщика в заказе"' : '' }}>
+                                <i class="fe fe-check"></i> Завершить
                             </button>
                         </td>
                     </tr>
@@ -125,13 +125,13 @@
                                     <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                                 </div>
                                 <div class="modal-body">
-                                    <p><strong>Заказ:</strong> №{{ $production->order->order_number }}</p>
-                                    <p><strong>Клиент:</strong> {{ $production->order->customer_name }}</p>
-                                    <p><strong>Адрес:</strong> {{ $production->order->address }}</p>
-                                    <p><strong>Менеджер:</strong> {{ $production->order->manager->name ?? '—' }}</p>
+                                    <p><strong>Заказ:</strong> №{{ optional($production->order)->order_number ?: '—' }}</p>
+                                    <p><strong>Клиент:</strong> {{ optional($production->order)->customer_name ?: '—' }}</p>
+                                    <p><strong>Адрес:</strong> {{ optional($production->order)->address ?: '—' }}</p>
+                                    <p><strong>Менеджер:</strong> {{ optional($production->order)->manager->name ?? '—' }}</p>
                                     <p><strong>Установщик:</strong> 
-                                        @if($production->order->installer)
-                                            <span class="badge badge-info">{{ $production->order->installer->name }}</span>
+                                        @if(optional($production->order)->installer)
+                                            <span class="badge badge-info">{{ optional($production->order)->installer->name }}</span>
                                         @else
                                             <span class="badge badge-danger">Не назначен</span>
                                         @endif
@@ -148,7 +148,7 @@
                         <div class="modal-dialog" role="document">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title">Завершить производство для заказа №{{ $production->order->order_number }}</h5>
+                                    <h5 class="modal-title">Завершить производство для заказа №{{ optional($production->order)->order_number ?: '—' }}</h5>
                                     <button type="button" class="close" data-dismiss="modal">
                                         <span>&times;</span>
                                     </button>
@@ -158,8 +158,8 @@
                                     <div class="modal-body">
                                         <div class="alert alert-info">
                                             <strong>Установщик:</strong> 
-                                            @if($production->order->installer)
-                                                {{ $production->order->installer->name }}
+                                            @if(optional($production->order)->installer)
+                                                {{ optional($production->order)->installer->name }}
                                             @else
                                                 <span class="text-danger">Не назначен! Сначала назначьте установщика в заказе.</span>
                                             @endif
@@ -171,7 +171,7 @@
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
-                                        <button type="submit" class="btn btn-success" {{ !$production->order->installer_id ? 'disabled' : '' }}>
+                                        <button type="submit" class="btn btn-success" {{ !optional($production->order)->installer_id ? 'disabled' : '' }}>
                                             Завершить производство
                                         </button>
                                     </div>
@@ -207,5 +207,221 @@
     padding: 0.1rem 0.2rem !important;
     font-size: 0.7rem !important;
 }
+
+/* Дополнительные стили для полноэкранного модального окна календаря */
+@media (min-width: 992px) {
+    .table-responsive {
+        overflow-x: hidden;
+    }
+}
+
+.modal-fullscreen,
+.modal-fullscreen .modal-dialog,
+.modal-fullscreen .modal-content,
+.modal-fullscreen .modal-body {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    margin: 0;
+    padding: 0 !important;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: stretch;
+}
+
+#calendar {
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-fullscreen,
+.modal-fullscreen .modal-dialog {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    margin: 0 !important;
+    z-index: 1055;
+}
+
+/* Фикс для отображения выпадающих меню поверх таблицы */
+.table-responsive {
+    overflow: visible !important;
+}
+.dropdown-menu {
+    z-index: 1055 !important;
+}
 </style>
-@endsection 
+
+<!-- Календарь -->
+<div class="modal fade" id="calendarModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Календарь производства</h5>
+                <button type="button" class="btn-close" data-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body p-0" id="calendarContent">
+                <div id="calendar" data-type="production"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        let calendar;
+
+        $('#calendarModal').on('shown.bs.modal', function () {
+            $('#calendarContent').html('<div id="calendar" data-type="production"></div>');
+            const calendarEl = document.getElementById('calendar');
+            if (!calendarEl) return;
+            const type = calendarEl.dataset.type;
+
+            // Получаем параметр manager_id из URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const managerId = urlParams.get('manager_id');
+
+            // Обновляем заголовок календаря с информацией о фильтре
+            const modalTitle = $('#calendarModal .modal-title');
+            let calendarTitle = 'Календарь производства';
+            
+            // Получаем имя выбранного сотрудника из соответствующей ссылки в dropdown
+            if (managerId) {
+                const activeDropdownItem = document.querySelector(`a.dropdown-item[href*="manager_id=${managerId}"]`);
+                if (activeDropdownItem) {
+                    // Извлекаем только текст, исключая иконки
+                    let employeeName = activeDropdownItem.textContent.trim();
+                    // Убираем символ галочки если есть
+                    employeeName = employeeName.replace(/\s*✓\s*$/, '').trim();
+                    calendarTitle += ' - ' + employeeName;
+                }
+            }
+            modalTitle.text(calendarTitle);
+
+            if (calendar) {
+                calendar.destroy();
+            }
+
+            // Формируем extraParams с учетом фильтрации
+            const extraParams = { type: type };
+            if (managerId) {
+                extraParams.manager_id = managerId;
+            }
+
+            calendar = new window.FullCalendar.Calendar(calendarEl, {
+                plugins: [window.FullCalendar.dayGridPlugin],
+                locale: window.FullCalendar.ruLocale,
+                initialView: 'dayGridMonth',
+                height: '100%',
+                events: {
+                    url: '/employee/calendar/events',
+                    method: 'GET',
+                    extraParams: extraParams,
+                    failure: function () {
+                        alert('Ошибка загрузки событий!');
+                    },
+                },
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth'
+                }
+            });
+            calendar.render();
+        });
+
+        $('#calendarModal').on('hidden.bs.modal', function () {
+            if (calendar) {
+                calendar.destroy();
+                calendar = null;
+            }
+        });
+    });
+</script>
+@endsection
+
+<style>
+.table-production th,
+.table-production td {
+    padding: 0.1rem 0.2rem !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    vertical-align: middle !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.table-production td:last-child {
+    white-space: normal !important;
+    width: 120px !important;
+}
+
+.table-production .btn {
+    padding: 0.1rem 0.2rem !important;
+    font-size: 0.7rem !important;
+}
+
+.modal-fullscreen,
+.modal-fullscreen .modal-dialog,
+.modal-fullscreen .modal-content,
+.modal-fullscreen .modal-body {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    margin: 0;
+    padding: 0 !important;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: stretch;
+}
+
+#calendar {
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-fullscreen,
+.modal-fullscreen .modal-dialog {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    margin: 0 !important;
+    z-index: 1055;
+}
+
+.actions-cell > * {
+    margin-bottom: 0 !important;
+    margin-right: 2px !important;
+}
+.actions-cell .btn,
+.actions-cell .badge {
+    margin-bottom: 0 !important;
+    margin-right: 2px !important;
+}
+</style>

@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>@yield('title', 'Админка')</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon"/>
     <link href="{{ asset('vendor/tabler/dashboard.css') }}" rel="stylesheet" />
     <link rel="stylesheet" href="{{ asset('vendor/fontawesome/css/fontawesome.css') }}">
     <script src="{{ asset('vendor/feather-icons/dist/feather.js') }}"></script>
+    <link rel="stylesheet" href="{{ asset('vendor/calendar/fullcalendar.global.min.css') }}">
 </head>
 <body>
 
@@ -197,7 +199,6 @@
 </div>
 
 {{-- Скрипты --}}
-<script src="{{ asset('vendor/calendar/index.global.min.js') }}"></script>
 <script src="{{ asset('vendor/js_for_dashboard/jquery.min.js') }}"></script>
 <script src="{{ asset('vendor/js_for_dashboard/popper.js') }}"></script>
 <script src="{{ asset('vendor/js_for_dashboard/bootstrap.min.js') }}"></script>

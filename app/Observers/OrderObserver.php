@@ -122,6 +122,22 @@ class OrderObserver
                 ]);
             }
         }
+
+        // Синхронизация вида товара (product_name -> product_type в договоре)
+        if ($order->isDirty('product_name')) {
+            $contract = $order->contract;
+            if ($contract) {
+                $oldProductType = $contract->product_type;
+                $contract->update(['product_type' => $order->product_name]);
+
+                Log::info('Синхронизация вида товара в договоре', [
+                    'order_id'        => $order->id,
+                    'contract_id'     => $contract->id,
+                    'old_product_type'=> $oldProductType,
+                    'new_product_type'=> $order->product_name,
+                ]);
+            }
+        }
     }
 
     /**

@@ -26,6 +26,10 @@
                 <input type="number" class="form-control" name="order_number" placeholder="Введите номер заказа" required>
             </div>
             <div class="mb-3">
+                <label class="form-label">Наименование продукции</label>
+                <input type="text" class="form-control" name="product_name" placeholder="Введите наименование продукции">
+            </div>
+            <div class="mb-3">
                 <label class="form-label">Стоимость</label>
                 <input type="number" step="0.01" class="form-control" name="total_amount" placeholder="Введите стоимость заказа">
             </div>

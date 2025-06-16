@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained();
             $table->foreignId('documentation_id')->nullable()->constrained();
-            $table->foreignId('installer_id')->constrained('users')->nullable();
+            $table->foreignId('installer_id')->nullable()->constrained('users');
             $table->timestamp('installed_at')->nullable();
             $table->text('result_notes')->nullable();
             $table->timestamps();

@@ -9,20 +9,44 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
+                    <h5>Номер договора</h5>
+                    <p>{{ $contract->contract_number }}</p>
+                </div>
+                <div class="col-md-6">
                     <h5>Заказ</h5>
-                    <p>Заказ #{{ $contract->order->order_number }} - {{ $contract->order->customer_name }}</p>
+                    <p>№ {{ $contract->order->order_number }} – {{ $contract->order->customer_name }}</p>
                 </div>
                 <div class="col-md-6">
                     <h5>Конструктор</h5>
                     <p>{{ optional($contract->constructor)->name ?: '—' }}</p>
                 </div>
                 <div class="col-md-6">
-                    <h5>Номер договора</h5>
-                    <p>{{ $contract->contract_number }}</p>
-                </div>
-                <div class="col-md-6">
                     <h5>Дата подписания</h5>
                     <p>{{ $contract->signed_at ? $contract->signed_at->format('d.m.Y') : '—' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>Сумма договора</h5>
+                    <p>{{ $contract->final_amount ? number_format($contract->final_amount, 2, '.', ' ') . ' руб.' : '—' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>Срок подготовки документации</h5>
+                    <p>{{ $contract->documentation_due_at ? $contract->documentation_due_at->format('d.m.Y') : '—' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>Дата установки</h5>
+                    <p>{{ $contract->installation_date ? $contract->installation_date->format('d.m.Y') : '—' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>Вид товара</h5>
+                    <p>{{ $contract->product_type ?: '—' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>Дата готовности</h5>
+                    <p>{{ $contract->ready_date ? $contract->ready_date->format('d.m.Y') : '—' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>Монтажник</h5>
+                    <p>{{ optional($contract->order->installer)->name ?: '—' }}</p>
                 </div>
                 <div class="col-md-6">
                     <h5>Создан</h5>
@@ -48,7 +72,7 @@
                                 <li class="list-group-item">
                                     <a href="{{ Storage::url($attachment->path) }}" target="_blank">{{ $attachment->filename }}</a>
                                     @if($attachment->comment)
-                                        <p class="text-muted">{{ $attachment->comment }}</p>
+                                        <p class="text-muted mb-0">{{ $attachment->comment }}</p>
                                     @endif
                                 </li>
                             @endforeach
@@ -64,11 +88,21 @@
             <button type="button"
                     class="btn btn-outline-primary"
                     data-toggle="modal"
-                    data-target="#addAttachmentModal{{ $contract->id }}">
+                    data-target="#addAttachmentModal{{ $contract->id }}"
+                    onclick="closeParentModal(this)">
                 Добавить вложение
             </button>
             <a href="{{ route('employee.contracts.index') }}" class="btn btn-outline-secondary">Назад к списку</a>
         </div>
     </div>
 </div>
+
+<script>
+function closeParentModal(button) {
+    var parentModal = $(button).closest('.modal');
+    if (parentModal.length) {
+        parentModal.modal('hide');
+    }
+}
+</script>
 @endsection 

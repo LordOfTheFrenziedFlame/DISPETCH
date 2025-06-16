@@ -138,22 +138,71 @@
                                     <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                                 </div>
                                 <div class="modal-body">
-                                    <p><strong>Клиент:</strong> {{ optional($contract->order)->customer_name }}</p>
-                                    <p><strong>Адрес:</strong> {{ optional($contract->order)->address }}</p>
-                                    <p><strong>Дата подписания:</strong> {{ $contract->signed_at ? \Carbon\Carbon::parse($contract->signed_at)->format('d.m.Y H:i') : '—' }}</p>
-                                    <p><strong>Медиа:</strong></p>
-                                    <ul>
-                                        @foreach ($contract->attachments as $attachment)
-                                            <li><a href="{{ Storage::url($attachment->path) }}" target="_blank">{{ $attachment->filename }}</a></li>
-                                        @endforeach
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Номер договора</h6>
+                                            <p>{{ $contract->contract_number }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Клиент</h6>
+                                            <p>{{ optional($contract->order)->customer_name }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Адрес</h6>
+                                            <p>{{ optional($contract->order)->address }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Конструктор</h6>
+                                            <p>{{ optional($contract->constructor)->name ?: '—' }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Дата подписания</h6>
+                                            <p>{{ $contract->signed_at ? $contract->signed_at->format('d.m.Y') : '—' }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Сумма договора</h6>
+                                            <p>{{ $contract->final_amount ? number_format($contract->final_amount, 2, '.', ' ') . ' руб.' : '—' }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Срок подготовки документации</h6>
+                                            <p>{{ $contract->documentation_due_at ? $contract->documentation_due_at->format('d.m.Y') : '—' }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Дата установки</h6>
+                                            <p>{{ $contract->installation_date ? $contract->installation_date->format('d.m.Y') : '—' }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Вид товара</h6>
+                                            <p>{{ $contract->product_type ?: '—' }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Дата готовности</h6>
+                                            <p>{{ $contract->ready_date ? $contract->ready_date->format('d.m.Y') : '—' }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Монтажник</h6>
+                                            <p>{{ optional($contract->order->installer)->name ?: '—' }}</p>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <h6>Вложения</h6>
+                                    <ul class="list-group mb-3">
+                                        @forelse ($contract->attachments as $attachment)
+                                            <li class="list-group-item p-1">
+                                                <a href="{{ Storage::url($attachment->path) }}" target="_blank">{{ $attachment->filename }}</a>
+                                            </li>
+                                        @empty
+                                            <li class="list-group-item p-1">Нет вложений</li>
+                                        @endforelse
                                     </ul>
                                     <div class="d-flex flex-column gap-2 mt-3">
+                                        <button type="button" class="btn btn-outline-warning mb-2" data-toggle="modal" data-target="#editModal{{ $contract->id }}" data-dismiss="modal">
+                                            <i class="fe fe-edit"></i> Редактировать
+                                        </button>
                                         @if(!$contract->signed_at)
                                         <button type="button" class="btn btn-outline-success mb-2" data-toggle="modal" data-target="#signModal{{ $contract->id }}" data-dismiss="modal">
                                             <i class="fe fe-check"></i> Сдать договор
                                         </button>
-                                        @else
-                                            <span class="badge badge-success">Выполнен</span>
                                         @endif
                                     </div>
                                 </div>
@@ -176,9 +225,51 @@
                                             <label for="signed_file{{ $contract->id }}">Прикрепить файл</label>
                                             <input type="file" name="signed_file" id="signed_file{{ $contract->id }}" class="form-control-file" required>
                                         </div>
+                                       <div class="form-group mb-3">
+                                            <label for="final_amount{{ $contract->id }}">Итоговая сумма, ₽</label>
+                                            <input type="number" step="0.01" name="final_amount" id="final_amount{{ $contract->id }}" class="form-control" value="{{ $contract->final_amount }}">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label for="contract_number{{ $contract->id }}">Номер договора</label>
+                                            <input type="text" name="contract_number" id="contract_number{{ $contract->id }}" class="form-control" value="{{ $contract->contract_number }}">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label for="documentation_due_at{{ $contract->id }}">Срок подготовки документации</label>
+                                            <input type="date" name="documentation_due_at" id="documentation_due_at{{ $contract->id }}" class="form-control" value="{{ optional($contract->documentation_due_at)->format('Y-m-d') }}">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label for="constructor_id_sign{{ $contract->id }}">Конструктор</label>
+                                            <select name="constructor_id" id="constructor_id_sign{{ $contract->id }}" class="form-control">
+                                                <option value="">—</option>
+                                                @foreach($constructorsList as $c)
+                                                    <option value="{{ $c->id }}" {{ $c->id == $contract->constructor_id ? 'selected' : '' }}>{{ $c->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label for="installation_date{{ $contract->id }}">Дата установки</label>
+                                            <input type="date" name="installation_date" id="installation_date{{ $contract->id }}" class="form-control" value="{{ optional($contract->installation_date)->format('Y-m-d') }}">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label for="installer_id_sign{{ $contract->id }}">Установщик</label>
+                                            <select name="installer_id" id="installer_id_sign{{ $contract->id }}" class="form-control">
+                                                <option value="">—</option>
+                                                @foreach($installersList as $inst)
+                                                    <option value="{{ $inst->id }}" {{ $inst->id == $contract->order->installer_id ? 'selected' : '' }}>{{ $inst->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label for="product_type{{ $contract->id }}">Вид товара</label>
+                                            <input type="text" name="product_type" id="product_type{{ $contract->id }}" class="form-control" value="{{ $contract->product_type }}">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label for="ready_date{{ $contract->id }}">Дата готовности</label>
+                                            <input type="date" name="ready_date" id="ready_date{{ $contract->id }}" class="form-control" value="{{ optional($contract->ready_date)->format('Y-m-d') }}">
+                                        </div>
                                         <div class="form-group mb-3">
                                             <label for="comment{{ $contract->id }}">Комментарий</label>
-                                            <textarea name="comment" id="comment{{ $contract->id }}" class="form-control" rows="3" placeholder="Комментарий к сдаче договора (необязательно)"></textarea>
+                                            <textarea name="comment" id="comment{{ $contract->id }}" class="form-control" rows="3" placeholder="Комментарий к сдаче договора (необязательно)">{{ $contract->comment }}</textarea>
                                         </div>
                                     </div>
                                     <div class="modal-footer">
@@ -187,6 +278,76 @@
                                     </div>
                                 </form>
                             </div>
+                        </div>
+                    </div>
+
+                    {{-- Модалка: Редактирование договора  --}}
+                    <div class="modal fade" id="editModal{{ $contract->id }}" tabindex="-1">
+                        <div class="modal-dialog" role="document">
+                            <form method="POST" action="{{ route('employee.contracts.update', $contract) }}">
+                                @csrf
+                                @method('PATCH')
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Редактировать договор</h5>
+                                        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="form-group mb-3">
+                                            <label for="final_amount_edit{{ $contract->id }}">Итоговая сумма, ₽</label>
+                                            <input type="number" step="0.01" name="final_amount" id="final_amount_edit{{ $contract->id }}" class="form-control" value="{{ $contract->final_amount }}">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label for="contract_number_edit{{ $contract->id }}">Номер договора</label>
+                                            <input type="text" name="contract_number" id="contract_number_edit{{ $contract->id }}" class="form-control" value="{{ $contract->contract_number }}">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label for="documentation_due_at_edit{{ $contract->id }}">Срок подготовки документации</label>
+                                            <input type="date" name="documentation_due_at" id="documentation_due_at_edit{{ $contract->id }}" class="form-control" value="{{ optional($contract->documentation_due_at)->format('Y-m-d') }}">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label for="constructor_id_edit{{ $contract->id }}">Конструктор</label>
+                                            <select name="constructor_id" id="constructor_id_edit{{ $contract->id }}" class="form-control">
+                                                <option value="">—</option>
+                                                @foreach($constructorsList as $c)
+                                                    <option value="{{ $c->id }}" {{ $c->id == $contract->constructor_id ? 'selected' : '' }}>{{ $c->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label for="installation_date{{ $contract->id }}">Дата установки</label>
+                                            <input type="date" name="installation_date" id="installation_date{{ $contract->id }}" class="form-control" value="{{ optional($contract->installation_date)->format('Y-m-d') }}">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label for="installer_id_edit{{ $contract->id }}">Установщик</label>
+                                            <select name="installer_id" id="installer_id_edit{{ $contract->id }}" class="form-control">
+                                                <option value="">—</option>
+                                                @foreach($installersList as $inst)
+                                                    <option value="{{ $inst->id }}" {{ $inst->id == $contract->order->installer_id ? 'selected' : '' }}>{{ $inst->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label for="product_type{{ $contract->id }}">Вид товара</label>
+                                            <input type="text" name="product_type" id="product_type{{ $contract->id }}" class="form-control" value="{{ $contract->product_type }}">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label for="ready_date_edit{{ $contract->id }}">Дата готовности</label>
+                                            <input type="date" name="ready_date" id="ready_date_edit{{ $contract->id }}" class="form-control" value="{{ optional($contract->ready_date)->format('Y-m-d') }}">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label for="comment_edit{{ $contract->id }}">Комментарий</label>
+                                            <textarea name="comment" id="comment_edit{{ $contract->id }}" class="form-control" rows="3">{{ $contract->comment }}</textarea>
+                                        </div>
+                                        <input type="hidden" name="order_id" value="{{ $contract->order_id }}">
+                                        <input type="hidden" name="contract_number" value="{{ $contract->contract_number }}">
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 @endforeach
@@ -210,7 +371,6 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         let calendar;

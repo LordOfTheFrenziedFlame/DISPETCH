@@ -31,17 +31,9 @@ class UsersController extends Controller
         $validate = $request->validate([
             'name' => 'required|string|max:255|regex:/^[a-zA-Zа-яА-Я\s]+$/u',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => [
-                'required',
-                'string',
-                'min:12',
-                'confirmed',
-                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/'
-            ],
+            'password' => 'required|string|min:6|confirmed',
             'role' => 'required|string|in:manager,surveyor,constructor,installer',
         ], [
-            'password.regex' => 'Пароль должен содержать минимум одну заглавную букву, одну строчную букву, одну цифру и один специальный символ',
-            'password.min' => 'Пароль должен содержать минимум 12 символов',
             'name.regex' => 'Имя может содержать только буквы и пробелы'
         ]);
 
@@ -96,16 +88,8 @@ class UsersController extends Controller
         $request->validate([
             'name' => 'required|string|max:255|regex:/^[a-zA-Zа-яА-Я\s]+$/u',
             'email' => 'required|string|email|max:255|unique:users,email,' . Auth::guard('employees')->user()->id,
-            'password' => [
-                'nullable',
-                'string',
-                'min:12',
-                'confirmed',
-                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/'
-            ],
+            'password' => 'nullable|string|min:6|confirmed',
         ], [
-            'password.regex' => 'Пароль должен содержать минимум одну заглавную букву, одну строчную букву, одну цифру и один специальный символ',
-            'password.min' => 'Пароль должен содержать минимум 12 символов',
             'name.regex' => 'Имя может содержать только буквы и пробелы'
         ]);
 

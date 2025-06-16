@@ -10,6 +10,10 @@
         <input type="text" class="form-control" id="address" name="address" value="{{ old('address', $order->address) }}" required>
     </div>
     <div class="form-group">
+        <label for="product_name">Наименование продукции</label>
+        <input type="text" class="form-control" id="product_name" name="product_name" value="{{ old('product_name', $order->product_name) }}">
+    </div>
+    <div class="form-group">
         <label for="phone_number">Телефон</label>
         <input type="text" class="form-control" id="phone_number" name="phone_number" value="{{ old('phone_number', $order->phone_number) }}" required>
     </div>

@@ -114,18 +114,27 @@
                             </a>
                         </td>
                         <td>
+                            <div class="d-flex gap-2">
                             @if($installation->installed_at)
-                                <span class="badge badge-success my-3">Выполнен</span>
+                                    <span class="badge badge-success">Выполнен</span>
                             @else
-                                <span class="badge badge-warning my-3">В процессе</span>
+                                    <span class="badge badge-warning">В процессе</span>
+                                    <button type="button" class="btn btn-outline-success btn-sm p-1 m-0"
+                                            style="min-width:70px;"
+                                            data-toggle="modal" data-target="#confirmModal{{ $installation->id }}">
+                                        <i class="fe fe-check"></i> Подтвердить
+                                    </button>
                             @endif
-                            <form action="{{ route('employee.installations.destroy', $installation) }}" method="POST" class="d-inline mt-2">
+                                <form action="{{ route('employee.installations.destroy', $installation) }}" method="POST" class="d-inline p-0 m-0">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-outline-danger w-100" onclick="return confirm('Вы уверены, что хотите удалить эту установку?')">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm p-1 m-0"
+                                            style="min-width:70px;"
+                                            onclick="return confirm('Вы уверены, что хотите удалить эту установку?')">
                                     <i class="fe fe-trash"></i> Удалить
                                 </button>
                             </form>
+                            </div>
                         </td>
                     </tr>
 

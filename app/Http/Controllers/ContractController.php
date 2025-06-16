@@ -32,9 +32,11 @@ class ContractController extends Controller
         )->get();
 
         $employees = \App\Models\User::all(['id', 'name', 'role']);
+        $constructorsList = \App\Models\User::where('role', 'constructor')->get(['id','name']);
+        $installersList   = \App\Models\User::where('role', 'installer')->get(['id','name']);
         $selectedEmployee = request('manager_id') ? \App\Models\User::find(request('manager_id')) : null;
 
-        return view('dashboard.contract.index', compact('contracts', 'attachments', 'employees', 'selectedEmployee'));
+        return view('dashboard.contract.index', compact('contracts', 'attachments', 'employees', 'selectedEmployee', 'constructorsList', 'installersList'));
     }
 
     public function create()
@@ -78,12 +80,27 @@ class ContractController extends Controller
         $request->validate([
             'order_id' => 'required|exists:orders,id',
             'constructor_id' => 'nullable|exists:users,id',
-            'contract_number' => 'required|string|max:255|unique:contracts,contract_number,' . $contract->id,
+            'contract_number' => 'nullable|string|max:255|unique:contracts,contract_number,' . $contract->id,
             'signed_at' => 'nullable|date',
             'comment' => 'nullable|string|max:1000',
+            'final_amount' => 'nullable|numeric|min:0',
+            'documentation_due_at' => 'nullable|date',
+            'installation_date' => 'nullable|date',
+            'installer_id' => 'nullable|exists:users,id',
+            'product_type' => 'nullable|string|max:255',
+            'ready_date' => 'nullable|date',
         ]);
 
-        $contract->update($request->all());
+        // Если product_type не отправлен – берём из заказа
+        $data = $request->all();
+        if (!array_key_exists('product_type', $data) || is_null($data['product_type'])) {
+            $data['product_type'] = $contract->order->product_name;
+        }
+
+        $contract->update($data);
+        if($request->filled('installer_id')) {
+            $contract->order->update(['installer_id' => $request->input('installer_id')]);
+        }
         return redirect()->route('employee.contracts.index')->with('success', 'Договор успешно обновлен');
     }
 
@@ -93,19 +110,43 @@ class ContractController extends Controller
             return redirect()->back()->with('error', 'У вас нет доступа к созданию договоров');
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'order_id' => 'required|exists:orders,id',
-            'contract_number' => 'required|string|unique:contracts,contract_number|max:255',
+            'contract_number' => 'nullable|string|unique:contracts,contract_number|max:255',
             'signed_at' => 'nullable|date',
+            'constructor_id' => 'nullable|exists:users,id',
+            'final_amount' => 'nullable|numeric|min:0',
+            'documentation_due_at' => 'nullable|date',
+            'installation_date' => 'nullable|date',
+            'installer_id' => 'nullable|exists:users,id',
+            'product_type' => 'nullable|string|max:255',
+            'ready_date' => 'nullable|date',
         ]);
 
-        $contract = Contract::create($request->only(['order_id', 'contract_number', 'signed_at']));
-        return redirect()->route('employee.contracts.index')->with('success', 'Договор успешно создан');
-        
-     }
+        // Автозаполнение product_type из заказа, если не передано
+        $order = \App\Models\Order::find($validated['order_id']);
+        $productType = $request->filled('product_type') ? $request->input('product_type') : ($order->product_name ?? null);
 
-     public function destroy(Contract $contract)
-     {
+        $contract = Contract::create(array_merge($request->only([
+            'order_id',
+            'constructor_id',
+            'contract_number',
+            'signed_at',
+            'comment',
+            'final_amount',
+            'documentation_due_at',
+            'installation_date',
+            'installer_id',
+            'ready_date',
+        ]), ['product_type' => $productType]));
+        if($request->filled('installer_id')) {
+            $contract->order->update(['installer_id' => $request->input('installer_id')]);
+        }
+        return redirect()->route('employee.contracts.index')->with('success', 'Договор успешно создан');
+    }
+
+    public function destroy(Contract $contract)
+    {
         if (!$this->canManageContracts()) {
             return redirect()->back()->with('error', 'У вас нет доступа к удалению договоров');
         }
@@ -128,6 +169,13 @@ class ContractController extends Controller
             'signed_file'   => 'required',
             'signed_file.*' => 'file|mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,ppt,pptx|max:10240',
             'comment'       => 'nullable|string|max:1000',
+            'final_amount'  => 'nullable|numeric|min:0',
+            'documentation_due_at' => 'nullable|date',
+            'installation_date'    => 'nullable|date',
+            'constructor_id' => 'nullable|exists:users,id',
+            'installer_id' => 'nullable|exists:users,id',
+            'product_type' => 'nullable|string|max:255',
+            'ready_date' => 'nullable|date',
         ]);
 
         // Получаем файлы как массив (даже если один)
@@ -149,10 +197,27 @@ class ContractController extends Controller
             }
             
             $contract->signed_at = now();
-            if ($request->filled('comment')) {
-                $contract->comment = $request->input('comment');
+            // Обновляем дополнительные поля, влияющие на Observer
+            $updateData = $request->only([
+                'comment',
+                'final_amount',
+                'documentation_due_at',
+                'installation_date',
+                'constructor_id',
+                'installer_id',
+                'product_type',
+                'ready_date',
+            ]);
+
+            if (empty($updateData['product_type'])) {
+                $updateData['product_type'] = $contract->order->product_name;
             }
+
+            $contract->fill($updateData);
             $contract->save();
+            if($request->filled('installer_id')) {
+                $contract->order->update(['installer_id' => $request->input('installer_id')]);
+            }
             return redirect()->route('employee.contracts.index')->with('success', 'Договор успешно подписан');
         }
         return redirect()->back()->with('error', 'Ошибка при подписании договора');

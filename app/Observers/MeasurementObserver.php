@@ -20,14 +20,14 @@ class MeasurementObserver
      */
     public function updated(Measurement $measurement): void
     {
-        // Если замер завершен (появилась дата measured_at) и у заказа еще нет договора
-        if ($measurement->isDirty('measured_at') && !is_null($measurement->measured_at)) {
+        // Если замер завершен (статус изменился на COMPLETED) и у заказа еще нет договора
+        if ($measurement->isDirty('status') && $measurement->status === \App\Models\Measurement::STATUS_COMPLETED) {
             $order = $measurement->order;
 
             if ($order && !$order->contract) {
                 Contract::create([
                     'order_id' => $order->id,
-                    'contract_number' => 'CN-' . $order->id . '-' . now()->timestamp,
+                    'contract_number' => null,
                     // Другие поля по умолчанию, если необходимо
                 ]);
             }

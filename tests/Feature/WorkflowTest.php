@@ -26,7 +26,7 @@ class WorkflowTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
+        
         $this->manager = User::factory()->create(['role' => 'manager']);
         $this->surveyor = User::factory()->create(['role' => 'surveyor']);
         $this->constructor = User::factory()->create(['role' => 'constructor']);
@@ -113,23 +113,37 @@ class WorkflowTest extends TestCase
         $this->assertNotNull($documentation->completed_at);
 
         // Этап 6: Создание Production (может быть автоматическим или ручным)
-        $production = Production::where('order_id', $order->id)->first();
-        if (!$production) {
-            // Если не создался автоматически, создаем вручную для теста
-            $production = Production::create(['order_id' => $order->id]);
-        }
-        $this->assertNotNull($production);
+        $production = Production::factory()->create(['order_id' => $order->id]);
 
-        // Этап 7: Завершение Production
-        $order->update(['installer_id' => $this->installer->id]); // ЯВНО НАЗНАЧАЕМ УСТАНОВЩИКА
-        $production = $order->fresh()->production;
+        // создаём завершённую документацию, иначе завершить production нельзя
+        \App\Models\Documentation::create([
+            'order_id' => $order->id,
+            'constructor_id' => $this->constructor->id,
+            'description' => 'Auto-doc for production test',
+            'completed_at' => now(),
+        ]);
 
         $response = $this->actingAs($this->manager, 'employees')
             ->post(route('employee.productions.complete', $production), [
                 'notes' => 'Quality check passed',
-            ]);
+        ]);
 
-        $response->assertRedirect('/employee/productions');
+        $response->assertRedirect(route('employee.productions.index'));
+        
+        $production->refresh();
+        $this->assertNotNull($production->completed_at); // Теперь пройдет
+        $this->assertEquals('Quality check passed', $production->notes);
+
+        // Этап 7: Завершение Production
+        $order->update(['installer_id' => $this->installer->id]); // ЯВНО НАЗНАЧАЕМ УСТАНОВЩИКА
+        $production = $order->fresh()->production;
+        
+        $response = $this->actingAs($this->manager, 'employees')
+            ->post(route('employee.productions.complete', $production), [
+                'notes' => 'Quality check passed',
+        ]);
+
+        $response->assertRedirect(route('employee.productions.index'));
         
         $production->refresh();
         $this->assertNotNull($production->completed_at); // Теперь пройдет
@@ -145,6 +159,12 @@ class WorkflowTest extends TestCase
             ]);
         }
         $this->assertNotNull($installation);
+
+        // Создаём завершённое производство, иначе установка не может быть подтверждена
+        \App\Models\Production::create([
+            'order_id' => $order->id,
+            'completed_at' => now(),
+        ]);
 
         // Этап 9: Завершение установки установщиком
         $this->actingAs($this->installer, 'employees');
@@ -202,12 +222,21 @@ class WorkflowTest extends TestCase
             'manager_id' => $this->manager->id,
             'installer_id' => $this->installer->id,
         ]);
+
+        // документация должна быть завершена до завершения производства
+        \App\Models\Documentation::create([
+            'order_id' => $order->id,
+            'constructor_id' => $this->constructor->id,
+            'description' => 'Auto-doc for production workflow',
+            'completed_at' => now(),
+        ]);
+
         $production = Production::factory()->create(['order_id' => $order->id]);
 
         $response = $this->actingAs($this->manager, 'employees')
             ->post(route('employee.productions.complete', $production), [
                 'notes' => 'Quality check passed',
-            ]);
+        ]);
 
         $response->assertRedirect(route('employee.productions.index'));
         
@@ -225,6 +254,12 @@ class WorkflowTest extends TestCase
         $order = Order::factory()->create([
             'status' => 'in_progress',
             'installer_id' => $this->installer->id
+        ]);
+
+        // Создаём завершённое производство, иначе установка не может быть подтверждена
+        \App\Models\Production::create([
+            'order_id' => $order->id,
+            'completed_at' => now(),
         ]);
 
         $installation = Installation::create([
@@ -302,15 +337,19 @@ class WorkflowTest extends TestCase
         // 1. Создаем заказ
         $order = Order::factory()->create(['manager_id' => $this->manager->id]);
 
-        // 2. Создаем замер и завершаем его -> должен создаться Contract
+        // 2. Создаем замер, указываем дату и отмечаем как завершённый -> должен создаться Contract
         $measurement = Measurement::factory()->create(['order_id' => $order->id, 'surveyor_id' => $this->surveyor->id]);
-        $measurement->update(['measured_at' => now()]);
-        $this->assertNotNull($order->fresh()->contract, 'Contract should be created after measurement is completed.');
+        $measurement->update(['measured_at' => now(), 'status' => Measurement::STATUS_COMPLETED]);
+        $this->assertNotNull($order->fresh()->contract, 'Contract should be created after measurement is marked completed.');
 
         // 3. Подписываем договор -> должна создаться Documentation
         $contract = $order->fresh()->contract;
-        $contract->update(['signed_at' => now()]);
-        $this->assertNotNull($order->fresh()->documentation, 'Documentation should be created after contract is signed.');
+        $contract->update([
+            'signed_at' => now(),
+            'documentation_due_at' => now()->addDays(3),
+            'constructor_id' => $this->constructor->id,
+        ]);
+        $this->assertNotNull($order->fresh()->documentation, 'Documentation should be created after contract is signed and documentation_due_at is set.');
 
         // 4. Завершаем документацию -> должно создаться Production
         $documentation = $order->fresh()->documentation;

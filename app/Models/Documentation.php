@@ -23,8 +23,4 @@ class Documentation extends Model
     public function attachments() {
         return $this->morphMany(Attachment::class, 'attachable');
     }
-
-    public function installation() {
-        return $this->hasOne(Installation::class, 'order_id', 'order_id');
-    }
 }

@@ -148,6 +148,12 @@ class InstallationController extends Controller
             return redirect()->back()->with('error', 'У вас нет доступа к подтверждению установки');
         }
 
+        // Проверяем последовательность конвейера: производство должно быть завершено
+        $order = $installation->order;
+        if (!$order->production || is_null($order->production->completed_at)) {
+            return redirect()->back()->with('error', 'Невозможно подтвердить установку, пока производство не завершено для заказа №' . $order->order_number);
+        }
+
         $request->validate([
             'result_notes' => 'nullable|string|max:1000',
         ]);

@@ -15,9 +15,14 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained();
             $table->foreignId('constructor_id')->nullable()->constrained('users');
-            $table->string('contract_number')->unique();
+            $table->string('contract_number')->nullable()->unique();
             $table->date('signed_at')->nullable();
             $table->text('comment')->nullable();
+            $table->decimal('final_amount', 12, 2)->nullable();
+            $table->string('product_type')->nullable();
+            $table->date('ready_date')->nullable();
+            $table->date('documentation_due_at')->nullable();
+            $table->date('installation_date')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

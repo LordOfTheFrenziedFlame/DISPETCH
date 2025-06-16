@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Documentation;
 use Illuminate\Support\Facades\Auth;
 use App\Traits\HasRolePermissions;
+use App\Components\SaveMedia;
 
 class DocumentationController extends Controller
 {
@@ -192,6 +193,26 @@ class DocumentationController extends Controller
     {
         if (!$this->canConfirmDocumentation()) {
             return redirect()->back()->with('error', 'У вас нет доступа к подтверждению документации');
+        }
+
+        $user = auth('employees')->user();
+        if ($user->role === 'manager') {
+            $request->validate([
+                'media' => 'required|array',
+                'media.*' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,ppt,pptx|max:10240',
+                'comment' => 'nullable|string',
+            ]);
+
+            $service = app(SaveMedia::class);
+            $service->attachable_type = Documentation::class;
+            $service->attachable_id = $documentation->id;
+            $service->file = $request->file('media');
+            $service->comment = $request->comment ?? '';
+            $success = $service->save();
+
+            if (!$success) {
+                return redirect()->back()->with('error', 'Не удалось загрузить медиа файлы.');
+            }
         }
 
         // Если установщик не назначен и текущий пользователь не менеджер, назначаем текущего пользователя

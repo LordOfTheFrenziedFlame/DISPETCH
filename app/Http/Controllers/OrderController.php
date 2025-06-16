@@ -102,6 +102,7 @@ class OrderController extends Controller
             'constructor_id' => 'nullable|exists:users,id',
             'installer_id' => 'nullable|exists:users,id',
             'order_number' => 'required|integer|unique:orders,order_number',
+            'product_name' => 'nullable|string|max:255',
             'total_amount' => 'nullable|numeric|min:0',
         ]);
 
@@ -177,6 +178,7 @@ class OrderController extends Controller
             'constructor_id' => 'nullable|exists:users,id',
             'installer_id' => 'nullable|exists:users,id',
             'status' => 'required|in:pending,in_progress,completed',
+            'product_name' => 'nullable|string|max:255',
             'total_amount' => 'nullable|numeric|min:0',
         ]);
         

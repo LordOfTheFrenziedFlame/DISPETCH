@@ -13,7 +13,12 @@ class ProductionController extends Controller
      */
     public function index(Request $request)
     {
-        $productions = Production::with(['order', 'order.installer'])->whereNull('completed_at')->get();
+        $productions = Production::with(['order', 'order.installer'])
+            ->whereNull('completed_at')
+            ->whereHas('order', function($q){
+                $q->whereNull('deleted_at');
+            })
+            ->get();
         $employees = \App\Models\User::where('role', 'manager')->get(['id', 'name', 'role']);
         $selectedEmployee = $request->get('manager_id') ? \App\Models\User::find($request->get('manager_id')) : null;
         
@@ -26,11 +31,17 @@ class ProductionController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $production->load('order');
+        $production->loadMissing('order.documentation');
+        $order = $production->order;
+
+        // Проверяем последовательность конвейера: документация должна быть завершена
+        if (!$order->documentation || is_null($order->documentation->completed_at)) {
+            return redirect()->back()->with('error', 'Невозможно завершить производство, пока документация не завершена для заказа №' . $order->order_number);
+        }
 
         // Проверяем, что у заказа назначен установщик
-        if (!$production->order->installer_id) {
-            return redirect()->back()->with('error', 'Для завершения производства необходимо назначить установщика в заказе №' . $production->order->order_number);
+        if (!$order->installer_id) {
+            return redirect()->back()->with('error', 'Для завершения производства необходимо назначить установщика в заказе №' . $order->order_number);
         }
         
         $production->update([
