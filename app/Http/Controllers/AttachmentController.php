@@ -81,23 +81,8 @@ class AttachmentController extends Controller
         $service->file = $request->file('media');
         $service->comment = $request->comment ?? '';
         $success = $service->save();
-
-        if ($success) {
-            $measurement->update([
-                'uploaded' => now(),
-                'status' => Measurement::STATUS_COMPLETED
-            ]);
-
-            Log::info('Медиа файлы добавлены к замеру', [
-                'measurement_id' => $measurement->id,
-                'user_id' => $this->getCurrentUser()->id,
-                'order_id' => $measurement->order_id
-            ]);
-
-            return redirect()->back()->with('success', 'Медиа файлы успешно добавлены');
-        }
-
-        return redirect()->back()->with('error', 'Не удалось добавить медиа файлы');
+        
+        return redirect()->back()->with('success', 'Медиа файлы успешно добавлены');
     }
 
     public function attachMediaByDocumentation(Request $request, \App\Models\Documentation $documentation)

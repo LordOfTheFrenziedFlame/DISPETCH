@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('constructor_id')->constrained('users');
             $table->text('description')->nullable();
             $table->timestamp('completed_at')->nullable();
+            $table->text('notes')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

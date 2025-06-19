@@ -65,21 +65,8 @@
             </div>
             <div class="row mt-4">
                 <div class="col-12">
-                    <h5>Вложения</h5>
-                    <ul class="list-group">
-                        @if($contract->attachments && $contract->attachments->isNotEmpty())
-                            @foreach($contract->attachments as $attachment)
-                                <li class="list-group-item">
-                                    <a href="{{ Storage::url($attachment->path) }}" target="_blank">{{ $attachment->filename }}</a>
-                                    @if($attachment->comment)
-                                        <p class="text-muted mb-0">{{ $attachment->comment }}</p>
-                                    @endif
-                                </li>
-                            @endforeach
-                        @else
-                            <li class="list-group-item">Нет вложений</li>
-                        @endif
-                    </ul>
+                    <h5>Вложения по заказу</h5>
+                    @include('dashboard.partials.attachments-list', ['attachments' => $contract->order->all_attachments])
                 </div>
             </div>
         </div>

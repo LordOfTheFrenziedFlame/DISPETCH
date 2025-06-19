@@ -14,7 +14,6 @@ class ProductionController extends Controller
     public function index(Request $request)
     {
         $productions = Production::with(['order', 'order.installer'])
-            ->whereNull('completed_at')
             ->whereHas('order', function($q){
                 $q->whereNull('deleted_at');
             })

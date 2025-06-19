@@ -47,21 +47,8 @@
             </div>
             <div class="row mt-4">
                 <div class="col-12">
-                    <h5>Вложения</h5>
-                    <ul class="list-group">
-                        @if($documentation->attachments && $documentation->attachments->isNotEmpty())
-                            @foreach($documentation->attachments as $attachment)
-                                <li class="list-group-item">
-                                    <a href="{{ Storage::url($attachment->path) }}" target="_blank">{{ $attachment->filename }}</a>
-                                    @if($attachment->comment)
-                                        <p class="text-muted">{{ $attachment->comment }}</p>
-                                    @endif
-                                </li>
-                            @endforeach
-                        @else
-                            <li class="list-group-item">Нет вложений</li>
-                        @endif
-                    </ul>
+                    <h5>Вложения по заказу</h5>
+                    @include('dashboard.partials.attachments-list', ['attachments' => $documentation->order->all_attachments])
                 </div>
             </div>
         </div>
@@ -78,3 +65,9 @@
     </div>
 </div>
 @endsection 
+
+@include('dashboard.partials.attachment-modal', [
+    'modalId' => 'addAttachmentModal' . $documentation->id,
+    'route' => route('employee.documentations.addAttachment', $documentation),
+    'uniqueId' => $documentation->id,
+]) 

@@ -86,6 +86,7 @@
                         <th>Договор</th>
                         <th>Документация</th>
                         <th>Установка</th>
+                        <th>Комментарий</th>
                         <th>Статус</th>
                         <th>Действия</th>
                     </tr>
@@ -172,6 +173,9 @@
                                    data-target="#showOrderModal{{ $order->id }}">
                                     {{ optional($order->installation)->installed_at ? \Carbon\Carbon::parse($order->installation->installed_at)->format('d.m.Y') : '—' }}
                                 </a>
+                            </td>
+                            <td>
+                                {{ \Illuminate\Support\Str::limit($order->notes ?? '—', 50) }}
                             </td>
                             <td>
                                 <a href="#" 

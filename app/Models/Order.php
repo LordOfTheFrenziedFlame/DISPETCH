@@ -89,38 +89,57 @@ class Order extends Model
     public function getProductionStageAttribute()
     {
         if ($this->status === 'completed') {
-            return 'Завершён';
+            return 'Этап завершён: Заказ полностью завершён';
         }
+
+        // --- Финальный этап ---
         if ($this->installation) {
             if ($this->installation->installed_at) {
-                return 'Действие: Установка завершена';
+                return 'Этап завершён: Установка';
             }
-            return 'Этап: Установка';
+            return 'Этап в процессе: Установка';
         }
+
+        // --- Производство ---
+        if ($this->production) {
+            if ($this->production->completed_at) {
+                return 'Этап завершён: Производство';
+            }
+            return 'Этап в процессе: Производство';
+        }
+
+        // --- Документация ---
         if ($this->documentation) {
             if ($this->documentation->completed_at) {
-                return 'Действие: Документация завершена';
+                return 'Этап завершён: Документация';
             }
-            return 'Этап: Документация';
+            return 'Этап в процессе: Документация';
         }
+
+        // --- Договор ---
         if ($this->contract) {
             if ($this->contract->signed_at) {
-                return 'Действие: Договор подписан';
+                return 'Этап завершён: Договор';
             }
-            return 'Этап: Договор';
+            return 'Этап в процессе: Договор';
         }
+
+        // --- Замер ---
         if ($this->measurement) {
             if ($this->measurement->measured_at) {
-                return 'Действие: Замер завершён';
+                return 'Этап завершён: Замер';
             }
             if ($this->measurement->initial_meeting_at) {
-                return 'Этап: Замер';
+                return 'Этап в процессе: Замер';
             }
-            return 'Этап: Заявка';
+            return 'Этап в процессе: Заявка';
         }
+
+        // --- Встреча ---
         if ($this->meeting_at) {
-            return 'Этап: Встреча';
+            return 'Этап в процессе: Встреча';
         }
-        return 'В процессе';
+
+        return 'Этап в процессе: Не определён';
     }
 }

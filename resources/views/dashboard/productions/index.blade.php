@@ -83,6 +83,8 @@
                     <th>Адрес</th>
                     <th>Установщик</th>
                     <th>Статус</th>
+                    <th>Дата готовности (по договору)</th>
+                    <th>Заметки</th>
                     <th>Действия</th>
                 </tr>
             </thead>
@@ -107,6 +109,12 @@
                         </td>
                         <td>
                             <span class="badge badge-warning my-3">В производстве</span>
+                        </td>
+                        <td>
+                            {{ optional(optional($production->order)->contract)->ready_date ? \Carbon\Carbon::parse(optional(optional($production->order)->contract)->ready_date)->format('d.m.Y') : '—' }}
+                        </td>
+                        <td>
+                            {{ \Illuminate\Support\Str::limit($production->notes ?? '—', 50) }}
                         </td>
                         <td>
                             <button type="button" class="btn btn-sm btn-outline-success" data-toggle="modal" data-target="#completeProductionModal{{ $production->id }}"
@@ -136,8 +144,11 @@
                                             <span class="badge badge-danger">Не назначен</span>
                                         @endif
                                     </p>
+                                    <p><strong>Дата готовности (по договору):</strong> {{ optional(optional($production->order)->contract)->ready_date ? \Carbon\Carbon::parse(optional(optional($production->order)->contract)->ready_date)->format('d.m.Y') : '—' }}</p>
                                     <p><strong>Заметки производства:</strong> {{ $production->notes ?? '—' }}</p>
                                     <p><strong>Статус:</strong> <span class="badge badge-warning">В производстве</span></p>
+                                    <p><strong>Вложения по заказу:</strong></p>
+                                    @include('dashboard.partials.attachments-list', ['attachments' => $production->order->all_attachments])
                                 </div>
                             </div>
                         </div>

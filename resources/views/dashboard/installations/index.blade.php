@@ -86,7 +86,9 @@
                     <th>№</th>
                     <th>Клиент</th>
                     <th>Адрес</th>
+                    <th>Плановая дата</th>
                     <th>Дата установки</th>
+                    <th>Заметки</th>
                     <th>Действия</th>
                 </tr>
             </thead>
@@ -110,8 +112,16 @@
                         </td>
                         <td>
                             <a href="#" data-toggle="modal" data-target="#showModal{{ $installation->id }}">
+                                {{ optional(optional($installation->order)->contract)->installation_date ? \Carbon\Carbon::parse(optional(optional($installation->order)->contract)->installation_date)->format('d.m.Y') : '—' }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="#" data-toggle="modal" data-target="#showModal{{ $installation->id }}">
                                 {{ $installation->installed_at ? $installation->installed_at->format('d.m.Y H:i') : '—' }}
                             </a>
+                        </td>
+                        <td>
+                            {{ \Illuminate\Support\Str::limit($installation->result_notes ?? '—', 50) }}
                         </td>
                         <td>
                             <div class="d-flex gap-2">
@@ -151,6 +161,7 @@
                                     <p><strong>Клиент:</strong> {{ $installation->order->customer_name }}</p>
                                     <p><strong>Адрес:</strong> {{ $installation->order->address }}</p>
                                     <p><strong>Установщик:</strong> {{ $installation->installer ? $installation->installer->name : 'Не назначен' }}</p>
+                                    <p><strong>Плановая дата установки (по договору):</strong> {{ optional(optional($installation->order)->contract)->installation_date ? \Carbon\Carbon::parse(optional(optional($installation->order)->contract)->installation_date)->format('d.m.Y') : '—' }}</p>
                                     <p><strong>Дата установки:</strong> {{ $installation->installed_at ? $installation->installed_at->format('d.m.Y H:i') : '—' }}</p>
                                     <p><strong>Статус:</strong> 
                                         @if($installation->installed_at)
@@ -169,16 +180,8 @@
                                     @if($installation->result_notes)
                                         <p><strong>Заметки по результату:</strong> {{ $installation->result_notes }}</p>
                                     @endif
-                                    <p><strong>Вложения:</strong></p>
-                                    <ul>
-                                        @if($installation->attachments && $installation->attachments->isNotEmpty())
-                                            @foreach ($installation->attachments as $attachment)
-                                                <li><a href="{{ Storage::url($attachment->path) }}" target="_blank">{{ $attachment->filename }}</a></li>
-                                            @endforeach
-                                        @else
-                                            <li>Нет вложений</li>
-                                        @endif
-                                    </ul>
+                                    <p><strong>Вложения по заказу:</strong></p>
+                                    @include('dashboard.partials.attachments-list', ['attachments' => $installation->order->all_attachments])
                                     <div class="d-flex flex-column gap-2 mt-3">
                                         @if(!$installation->installed_at)
                                             <button type="button" class="btn btn-outline-success mb-2" data-toggle="modal" data-target="#confirmModal{{ $installation->id }}" data-dismiss="modal">
@@ -240,7 +243,6 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         let calendar;

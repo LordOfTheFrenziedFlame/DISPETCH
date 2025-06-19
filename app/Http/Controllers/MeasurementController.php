@@ -263,37 +263,38 @@ class MeasurementController extends Controller
             return redirect()->back()->withErrors('Замер не измерен');
         }
 
-        $request->validate([
-            'completion_media' => 'required|array',
-            'completion_media.*' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,ppt,pptx|max:10240',
-        ]);
-
         if (!$measurement->order) {
             return redirect()->back()->with('error', 'Замер не связан с заказом');
         }
 
-        $service = app(SaveMedia::class);
-        $service->attachable_type = Measurement::class; 
-        $service->attachable_id = $measurement->id;
-        $service->file = $request->file('completion_media');
-        $success = $service->save();
+        // Валидация поля notes
+        $request->validate([
+            'notes' => 'nullable|string|max:1000',
+        ]);
 
-        if($success) {
-            // Если конструктор не назначен и текущий пользователь не менеджер, назначаем текущего пользователя
-            if (!$measurement->order->constructor_id && !$this->isManager()) {
-                $measurement->order->update(['constructor_id' => $this->getCurrentUser()->id]);
-            }
-            
-            $measurement->status = Measurement::STATUS_COMPLETED;
-            $measurement->uploaded = now();
-            $measurement->save();
-
-            Log::info('Замер отмечен как сданный', [
-                'measurement_id' => $measurement->id,
-                'user_id' => $this->getCurrentUser()->id,
-                'order_id' => $measurement->order_id
-            ]);
+        // Если конструктор не назначен и текущий пользователь не менеджер, назначаем текущего пользователя
+        if (!$measurement->order->constructor_id && !$this->isManager()) {
+            $measurement->order->update(['constructor_id' => $this->getCurrentUser()->id]);
         }
+        
+        $measurement->status = Measurement::STATUS_COMPLETED;
+        $measurement->uploaded = now();
+        
+        // Обновляем поле notes, принимая разные названия полей формы
+        if ($request->filled('notes')) {
+            $measurement->notes = $request->input('notes');
+        } elseif ($request->filled('note')) {
+            $measurement->notes = $request->input('note');
+        }
+        
+        $measurement->save();
+
+        Log::info('Замер отмечен как сданный', [
+            'measurement_id' => $measurement->id,
+            'user_id' => $this->getCurrentUser()->id,
+            'order_id' => $measurement->order_id,
+            'notes' => $measurement->notes
+        ]);
 
         return redirect()->back()->with('success', 'Замер успешно отмечен как сданный');
     }

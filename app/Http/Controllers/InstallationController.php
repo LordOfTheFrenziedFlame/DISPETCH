@@ -37,10 +37,10 @@ class InstallationController extends Controller
 
         $user = $this->getCurrentUser();
         
-        // Базовый запрос с фильтрацией по статусу заказа и неудаленным заказам
+        // Базовый запрос с фильтрацией по неудаленным заказам (убираем фильтр по статусу)
         $query = Installation::with(['order', 'installer', 'documentation'])
             ->whereHas('order', function ($query) {
-                $query->where('status', 'in_progress')->whereNull('deleted_at');
+                $query->whereNull('deleted_at');
             });
 
         // Фильтрация установок в зависимости от роли

@@ -114,7 +114,7 @@
                         </td>
                         <td>
                             <a href="#" data-toggle="modal" data-target="#showModal{{ $documentation->id }}">
-                                {{ $documentation->completed_at ? \Carbon\Carbon::parse($documentation->completed_at)->format('d.m.Y H:i') : '—' }}
+                                {{ optional($documentation->contract?->documentation_due_at)->format('d.m.Y') ?? '—' }}
                             </a>
                         </td>
                         <td class="actions-cell" style="min-width: 110px; white-space: nowrap;">
@@ -144,14 +144,10 @@
                                 <div class="modal-body">
                                     <p><strong>Клиент:</strong> {{ optional($documentation->order)->customer_name }}</p>
                                     <p><strong>Адрес:</strong> {{ optional($documentation->order)->address }}</p>
-                                    <p><strong>Дата завершения:</strong> {{ $documentation->completed_at ? \Carbon\Carbon::parse($documentation->completed_at)->format('d.m.Y H:i') : '—' }}</p>
+                                    <p><strong>Дата завершения:</strong> {{ optional($documentation->contract?->documentation_due_at)->format('d.m.Y') ?? '—' }}</p>
                                     <p><strong>Описание:</strong> {{ $documentation->description }}</p>
-                                    <p><strong>Медиа:</strong></p>
-                                    <ul>
-                                        @foreach ($documentation->attachments as $attachment)
-                                            <li><a href="{{ Storage::url($attachment->path) }}" target="_blank">{{ $attachment->filename }}</a></li>
-                                        @endforeach
-                                    </ul>
+                                    <p><strong>Вложения по заказу:</strong></p>
+                                    @include('dashboard.partials.attachments-list', ['attachments' => $documentation->order->all_attachments])
                                     <div class="mt-4 d-flex gap-2">
                                         @if(!$documentation->completed_at)
                                         @if(auth('employees')->user()->role === 'manager')
@@ -204,8 +200,8 @@
                                             <small class="form-text text-muted">Разрешенные форматы: jpg, jpeg, png, pdf, doc, docx, xls, xlsx, ppt, pptx. Максимальный размер: 10MB</small>
                                         </div>
                                         <div class="form-group">
-                                            <label for="comment{{ $documentation->id }}">Комментарий</label>
-                                            <textarea name="comment" id="comment{{ $documentation->id }}" class="form-control" rows="3" placeholder="Комментарий к файлам (необязательно)"></textarea>
+                                            <label for="notes{{ $documentation->id }}">Комментарий</label>
+                                            <textarea name="notes" id="notes{{ $documentation->id }}" class="form-control" rows="3" placeholder="Комментарий к сдаче этапа (необязательно)"></textarea>
                                         </div>
                                     </div>
                                     <div class="modal-footer">
@@ -235,8 +231,8 @@
                                             <small class="form-text text-muted">Необходимо прикрепить хотя бы один файл.</small>
                                         </div>
                                         <div class="form-group">
-                                            <label for="comment{{ $documentation->id }}">Комментарий</label>
-                                            <textarea name="comment" id="comment{{ $documentation->id }}" class="form-control" rows="3" placeholder="Комментарий к файлам (необязательно)"></textarea>
+                                            <label for="notes{{ $documentation->id }}">Комментарий</label>
+                                            <textarea name="notes" id="notes{{ $documentation->id }}" class="form-control" rows="3" placeholder="Комментарий к сдаче этапа (необязательно)"></textarea>
                                         </div>
                                     </div>
                                     <div class="modal-footer">

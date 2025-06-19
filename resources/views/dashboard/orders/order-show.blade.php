@@ -17,6 +17,26 @@
                     <p>{{ $order->product_name ?: '—' }}</p>
                 </div>
                 <div class="col-md-6">
+                    <h5>Комментарий заказа</h5>
+                    <p>{{ $order->notes ?: '—' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>Комментарий замера</h5>
+                    <p>{{ optional($order->measurement)->notes ?: '—' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>Комментарий производства</h5>
+                    <p>{{ optional($order->production)->notes ?: '—' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>Комментарий документации</h5>
+                    <p>{{ optional($order->documentation)->notes ?: '—' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>Комментарий установки</h5>
+                    <p>{{ optional($order->installation)->result_notes ?: '—' }}</p>
+                </div>
+                <div class="col-md-6">
                     <h5>Адрес</h5>
                     <p>{{ $order->address }}</p>
                 </div>

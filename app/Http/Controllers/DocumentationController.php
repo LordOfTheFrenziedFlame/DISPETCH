@@ -170,6 +170,7 @@ class DocumentationController extends Controller
             'constructor_id' => 'required|exists:users,id',
             'description' => 'nullable|string',
             'completed_at' => 'nullable|date',
+            'notes' => 'nullable|string|max:1000',
         ]);
 
         if (!$this->canManageDocumentation()) {
@@ -200,14 +201,14 @@ class DocumentationController extends Controller
             $request->validate([
                 'media' => 'required|array',
                 'media.*' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,ppt,pptx|max:10240',
-                'comment' => 'nullable|string',
+                'notes' => 'nullable|string',
             ]);
 
             $service = app(SaveMedia::class);
             $service->attachable_type = Documentation::class;
             $service->attachable_id = $documentation->id;
             $service->file = $request->file('media');
-            $service->comment = $request->comment ?? '';
+            $service->comment = $request->notes ?? '';
             $success = $service->save();
 
             if (!$success) {
@@ -217,10 +218,10 @@ class DocumentationController extends Controller
 
         // Если установщик не назначен и текущий пользователь не менеджер, назначаем текущего пользователя
         if (!$documentation->order->installer_id && !$this->isManager()) {
-            $documentation->order->update(['installer_id' => $this->getCurrentUser()->id]);
+            $documentation->order->update(['installer_id' => $this->getCurrentUser()->id], ['notes' => $request->notes ?? '']);
         }
 
-        $documentation->update(['completed_at' => now(), 'status' => 'completed']);
+        $documentation->update(['completed_at' => now(), 'status' => 'completed', 'notes' => $request->notes ?? '']);
         return redirect()->route('employee.documentations.index')->with('success', 'Документация успешно подтверждена');
     }
 

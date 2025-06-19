@@ -36,12 +36,16 @@ class CalendarApiController extends Controller
         $installationEvents  = collect();
 
         // --- Helper for color selection ---
-        $colorFor = function (?Carbon $deadline, ?Carbon $done) {
+        $colorFor = function (?Carbon $deadline, $done = null) {
+            // Первым делом проверяем факт завершения / активной работы
+            // (done может быть boolean или Carbon – нам важна лишь истинность)
+            if ($done) {
+                return '#4caf50'; // зелёный – выполнено или в работе
+            }
+
+            // Далее обычная логика дедлайнов
             if (is_null($deadline)) {
                 return '#2196f3'; // синий – нет дедлайна
-            }
-            if ($done) {
-                return '#4caf50'; // зелёный – выполнено
             }
             $today = Carbon::today();
             if ($deadline->lt($today)) {
@@ -79,13 +83,15 @@ class CalendarApiController extends Controller
             }
 
             $orderEvents = $ordersQuery->with(['manager', 'surveyor', 'constructor', 'installer', 'contract'])->get()->map(function ($item) use ($colorFor) {
+                $isActiveOrDone = in_array($item->status, ['in_progress', 'completed']);
+
                 return [
                     'type' => 'order',
                     'id' => $item->id,
-                    'title' => 'Установка #' . $item->id . ' (Заказ #' . optional($item->order)->order_number . ' - ' . optional($item->order)->customer_name . ')',
+                    'title' => 'Заказ #' . $item->id . ' (Заказ #' . $item->order_number . ' - ' . $item->customer_name . ')',
                     'start' => optional($item->meeting_at)->toDateString(),
-                    'backgroundColor' => $colorFor($item->meeting_at ? Carbon::parse($item->meeting_at) : null, null),
-                    'borderColor'     => $colorFor($item->meeting_at ? Carbon::parse($item->meeting_at) : null, null),
+                    'backgroundColor' => $colorFor($item->meeting_at ? Carbon::parse($item->meeting_at) : null, $isActiveOrDone),
+                    'borderColor'     => $colorFor($item->meeting_at ? Carbon::parse($item->meeting_at) : null, $isActiveOrDone),
                 ];
             });
         }
@@ -112,13 +118,15 @@ class CalendarApiController extends Controller
             });
 
             $measurementEvents = $measurementsQuery->with('order')->get()->map(function ($item) use ($colorFor) {
+                $isCompleted = $item->isCompleted();
+
                 return [
                     'type' => 'measurement',
                     'id' => $item->id,
-                    'title' => 'Установка #' . $item->id . ' (Заказ #' . optional($item->order)->order_number . ' - ' . optional($item->order)->customer_name . ')',
+                    'title' => 'Замер #' . $item->id . ' (Заказ #' . optional($item->order)->order_number . ' - ' . optional($item->order)->customer_name . ')',
                     'start' => $item->measured_at ? Carbon::parse($item->measured_at)->toIso8601String() : null,
-                    'backgroundColor' => $colorFor($item->measured_at ? Carbon::parse($item->measured_at) : null, null),
-                    'borderColor'     => $colorFor($item->measured_at ? Carbon::parse($item->measured_at) : null, null),
+                    'backgroundColor' => $colorFor($item->measured_at ? Carbon::parse($item->measured_at) : null, $isCompleted),
+                    'borderColor'     => $colorFor($item->measured_at ? Carbon::parse($item->measured_at) : null, $isCompleted),
                 ];
             });
         }
@@ -142,7 +150,7 @@ class CalendarApiController extends Controller
                 return [
                     'type' => 'contract',
                     'id' => $contract->id,
-                    'title' => 'Установка #' . $contract->id . ' (Заказ #' . optional($contract->order)->order_number . ' - ' . optional($contract->order)->customer_name . ')',
+                    'title' => 'Договор #' . $contract->id . ' (Заказ #' . optional($contract->order)->order_number . ' - ' . optional($contract->order)->customer_name . ')',
                     'start' => $contract->signed_at ? \Carbon\Carbon::parse($contract->signed_at)->toIso8601String() : null,
                     'url' => route('employee.contracts.index') . '#contract-' . $contract->id,
                     'backgroundColor' => $colorFor($contract->documentation_due_at, $contract->signed_at),
@@ -166,8 +174,8 @@ class CalendarApiController extends Controller
                     'id'    => $d->id,
                     'title' => 'Документация #' . $d->id . ' (Заказ #' . optional($d->order)->order_number . ' - ' . optional($d->order)->customer_name . ')',
                     'start' => $deadline ? Carbon::parse($deadline)->toIso8601String() : null,
-                    'backgroundColor' => $colorFor($deadline ? Carbon::parse($deadline) : null, $d->completed_at),
-                    'borderColor'     => $colorFor($deadline ? Carbon::parse($deadline) : null, $d->completed_at),
+                    'backgroundColor' => $colorFor($deadline ? Carbon::parse($deadline) : null, $d->completed_at ? Carbon::parse($d->completed_at) : null),
+                    'borderColor'     => $colorFor($deadline ? Carbon::parse($deadline) : null, $d->completed_at ? Carbon::parse($d->completed_at) : null),
                 ];
             });
         }

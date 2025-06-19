@@ -27,7 +27,7 @@
                                 (Замерщик)
                             @elseif($selectedEmployee->role === 'constructor')
                                 (Конструктор)
-                            @elseif($selectedEmployee->role === 'installer')
+                          @elseif($selectedEmployee->role === 'installer')
                                 (Монтажник)
                             @endif
                         </small>
@@ -91,6 +91,7 @@
                         <th>Замерщик</th>
                         <th>Дата встречи</th>
                         <th>Дата замера</th>
+                        <th>Комментарий</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
@@ -136,6 +137,9 @@
                                 <a href="#" data-toggle="modal" data-target="#showModal{{ $measurement->id }}">
                                     {{ $measurement->measured_at ? \Carbon\Carbon::parse($measurement->measured_at)->format('d.m.Y H:i') : '—' }}
                                 </a>
+                            </td>
+                            <td>
+                                {{ \Illuminate\Support\Str::limit($measurement->notes ?? '—', 50) }}
                             </td>
                             <td style="white-space: normal;">
                                 @if($measurement->isPending())
@@ -184,13 +188,8 @@
                                         @if($measurement->notes)
                                             <p><strong>Примечания к замеру:</strong> {{ $measurement->notes }}</p>
                                         @endif
-                                        <p><strong>Медиа:</strong></p>
-                                        <ul>
-                                            @foreach ($measurement->attachments as $attachment)
-                                                <li><a href="{{ Storage::url($attachment->path) }}" target="_blank">{{ $attachment->filename }}</a></li>
-                                                <p>{{ $attachment->comment }}</p>
-                                            @endforeach
-                                        </ul>
+                                        <p><strong>Вложения по заказу:</strong></p>
+                                        @include('dashboard.partials.attachments-list', ['attachments' => $measurement->order->all_attachments])
                                         <div class="d-flex flex-column gap-2 mt-3">
                                             <button type="button" class="btn btn-outline-primary mb-2" data-toggle="modal" data-target="#setTimeModal{{ $measurement->id }}" data-dismiss="modal">
                                                 <i class="fe fe-clock"></i> Назначить время
@@ -282,7 +281,7 @@
                         {{-- Модалка: Отметить как сданный --}}
                         <div class="modal fade" id="completeModal{{ $measurement->id }}" tabindex="-1">
                             <div class="modal-dialog" role="document">
-                                <form method="POST" action="{{ route('employee.measurements.complete', $measurement) }}" enctype="multipart/form-data">
+                                <form method="POST" action="{{ route('employee.measurements.complete', $measurement) }}">
                                     @csrf
                                     <div class="modal-content">
                                         <div class="modal-header">
@@ -299,13 +298,8 @@
                                                 @endif
                                             </div>
                                             <div class="form-group">
-                                                <label for="completion_media{{ $measurement->id }}">Медиа файлы</label>
-                                                <input type="file" name="completion_media[]" id="completion_media{{ $measurement->id }}" class="form-control-file" multiple required>
-                                                <small class="form-text text-muted">Обязательно загрузите фото/документы выполненного замера</small>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="completion_notes{{ $measurement->id }}">Комментарий</label>
-                                                <textarea name="completion_notes" id="completion_notes{{ $measurement->id }}" class="form-control" placeholder="Комментарий к сдаче замера (необязательно)"></textarea>
+                                                <label for="notes{{ $measurement->id }}">Комментарий</label>
+                                                <textarea name="notes" id="notes{{ $measurement->id }}" class="form-control" placeholder="Комментарий к сдаче замера (необязательно)"></textarea>
                                             </div>
                                         </div>
                                         <div class="modal-footer">

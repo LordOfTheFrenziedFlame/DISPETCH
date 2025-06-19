@@ -10,7 +10,7 @@ class Documentation extends Model
 
     use SoftDeletes;
 
-    protected $fillable = ['order_id', 'constructor_id', 'description', 'completed_at'];
+    protected $fillable = ['order_id', 'constructor_id', 'description', 'completed_at', 'notes'];
 
     public function order() {
         return $this->belongsTo(Order::class);
@@ -22,5 +22,10 @@ class Documentation extends Model
 
     public function attachments() {
         return $this->morphMany(Attachment::class, 'attachable');
+    }
+
+    // Получить контракт через заказ
+    public function getContractAttribute() {
+        return $this->order ? $this->order->contract : null;
     }
 }

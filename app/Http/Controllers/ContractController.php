@@ -33,7 +33,7 @@ class ContractController extends Controller
 
         $employees = \App\Models\User::all(['id', 'name', 'role']);
         $constructorsList = \App\Models\User::where('role', 'constructor')->get(['id','name']);
-        $installersList   = \App\Models\User::where('role', 'installer')->get(['id','name']);
+        $installersList = \App\Models\User::all(['id','name']);
         $selectedEmployee = request('manager_id') ? \App\Models\User::find(request('manager_id')) : null;
 
         return view('dashboard.contract.index', compact('contracts', 'attachments', 'employees', 'selectedEmployee', 'constructorsList', 'installersList'));
@@ -172,10 +172,13 @@ class ContractController extends Controller
             'final_amount'  => 'nullable|numeric|min:0',
             'documentation_due_at' => 'nullable|date',
             'installation_date'    => 'nullable|date',
-            'constructor_id' => 'nullable|exists:users,id',
-            'installer_id' => 'nullable|exists:users,id',
+            'constructor_id' => 'required|exists:users,id',
+            'installer_id' => 'required|exists:users,id',
             'product_type' => 'nullable|string|max:255',
             'ready_date' => 'nullable|date',
+            'notes' => 'nullable|string|max:1000',
+            'contract_number' => 'nullable|string|max:255',
+            
         ]);
 
         // Получаем файлы как массив (даже если один)
@@ -207,6 +210,8 @@ class ContractController extends Controller
                 'installer_id',
                 'product_type',
                 'ready_date',
+                'notes',
+                'contract_number',
             ]);
 
             if (empty($updateData['product_type'])) {

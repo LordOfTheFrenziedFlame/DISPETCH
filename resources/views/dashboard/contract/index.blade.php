@@ -141,11 +141,15 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <h6>Номер договора</h6>
-                                            <p>{{ $contract->contract_number }}</p>
+                                            <p>{{ $contract->contract_number ?: '—' }}</p>
                                         </div>
                                         <div class="col-md-6">
                                             <h6>Клиент</h6>
                                             <p>{{ optional($contract->order)->customer_name }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Комментарий</h6>
+                                            <p>{{ $contract->comment ?: '—' }}</p>
                                         </div>
                                         <div class="col-md-6">
                                             <h6>Адрес</h6>
@@ -186,15 +190,7 @@
                                     </div>
                                     <hr>
                                     <h6>Вложения</h6>
-                                    <ul class="list-group mb-3">
-                                        @forelse ($contract->attachments as $attachment)
-                                            <li class="list-group-item p-1">
-                                                <a href="{{ Storage::url($attachment->path) }}" target="_blank">{{ $attachment->filename }}</a>
-                                            </li>
-                                        @empty
-                                            <li class="list-group-item p-1">Нет вложений</li>
-                                        @endforelse
-                                    </ul>
+                                    @include('dashboard.partials.attachments-list', ['attachments' => $contract->order->all_attachments])
                                     <div class="d-flex flex-column gap-2 mt-3">
                                         <button type="button" class="btn btn-outline-warning mb-2" data-toggle="modal" data-target="#editModal{{ $contract->id }}" data-dismiss="modal">
                                             <i class="fe fe-edit"></i> Редактировать
