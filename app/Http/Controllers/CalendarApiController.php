@@ -138,7 +138,7 @@ class CalendarApiController extends Controller
                 return response()->json(['error' => 'Access denied to contracts'], 403);
             }
 
-            $contractsQuery = \App\Models\Contract::whereNotNull('signed_at')->with('order');
+            $contractsQuery = \App\Models\Contract::with('order');
             $contractsQuery->whereHas('order', function($q) use ($managerId) {
                 $q->whereNull('deleted_at');
                 if ($this->isManager() && $managerId) {
@@ -147,11 +147,15 @@ class CalendarApiController extends Controller
             });
 
             $contractEvents = $contractsQuery->get()->map(function ($contract) use ($colorFor) {
+                $startDate = $contract->signed_at
+                    ? \Carbon\Carbon::parse($contract->signed_at)
+                    : ($contract->documentation_due_at ? \Carbon\Carbon::parse($contract->documentation_due_at) : null);
+
                 return [
                     'type' => 'contract',
                     'id' => $contract->id,
                     'title' => 'Договор #' . $contract->id . ' (Заказ #' . optional($contract->order)->order_number . ' - ' . optional($contract->order)->customer_name . ')',
-                    'start' => $contract->signed_at ? \Carbon\Carbon::parse($contract->signed_at)->toIso8601String() : null,
+                    'start' => $startDate?->toIso8601String(),
                     'url' => route('employee.contracts.index') . '#contract-' . $contract->id,
                     'backgroundColor' => $colorFor($contract->documentation_due_at, $contract->signed_at),
                     'borderColor'     => $colorFor($contract->documentation_due_at, $contract->signed_at),

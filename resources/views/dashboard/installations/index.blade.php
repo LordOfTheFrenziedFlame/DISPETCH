@@ -135,15 +135,6 @@
                                         <i class="fe fe-check"></i> Подтвердить
                                     </button>
                             @endif
-                                <form action="{{ route('employee.installations.destroy', $installation) }}" method="POST" class="d-inline p-0 m-0">
-                                @csrf
-                                @method('DELETE')
-                                    <button type="submit" class="btn btn-outline-danger btn-sm p-1 m-0"
-                                            style="min-width:70px;"
-                                            onclick="return confirm('Вы уверены, что хотите удалить эту установку?')">
-                                    <i class="fe fe-trash"></i> Удалить
-                                </button>
-                            </form>
                             </div>
                         </td>
                     </tr>
@@ -208,10 +199,22 @@
                                 <form method="POST" action="{{ route('employee.installations.confirm', $installation) }}">
                                     @csrf
                                     <div class="modal-body">
+                                        <div class="mb-3">
+                                            <strong>Заказ №{{ $installation->order->order_number }}</strong> - {{ $installation->order->customer_name }}
+                                            <br><small class="text-muted">{{ $installation->order->address }}</small>
+                                            <br><small class="text-muted">Тел: {{ $installation->order->phone_number ?? '—' }}</small>
+                                            @if($installation->order->total_amount)
+                                                <br><small class="text-muted">Стоимость: {{ number_format($installation->order->total_amount, 0, '.', ' ') }} ₽</small>
+                                            @endif
+                                        </div>
                                         <p>Подтвердить завершение установки для заказа №{{ $installation->order->order_number }}?</p>
                                         <div class="form-group mb-3">
                                             <label for="result_notes{{ $installation->id }}">Заметки о результате</label>
                                             <textarea name="result_notes" id="result_notes{{ $installation->id }}" class="form-control" rows="3" placeholder="Дополнительные заметки о выполненной установке">{{ $installation->result_notes }}</textarea>
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label for="installation_date{{ $installation->id }}">Дата установки</label>
+                                            <input type="datetime-local" name="installed_at" id="installation_date{{ $installation->id }}" class="form-control" value="{{ $installation->installed_at ? $installation->installed_at->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i') }}">
                                         </div>
                                     </div>
                                     <div class="modal-footer">

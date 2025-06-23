@@ -12,9 +12,6 @@
                     <h3 class="card-title">Добавить пользователя</h3>
                 </div>
                 <div class="card-body">
-                    @if(session('success'))
-                        <div class="alert alert-success">{{ session('success') }}</div>
-                    @endif
                     @if($errors->any())
                         <div class="alert alert-danger">
                             <ul class="mb-0">

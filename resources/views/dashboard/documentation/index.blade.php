@@ -123,13 +123,6 @@
                             @else
                                 <span class="badge badge-warning align-middle" style="display:inline-block;vertical-align:middle;">В процессе</span>
                             @endif
-                            <form action="{{ route('employee.documentations.destroy', $documentation) }}" method="POST" class="d-inline p-0 m-0" style="display:inline-block;vertical-align:middle;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-outline-danger btn-sm p-1 m-0" style="min-width:70px;" onclick="return confirm('Вы уверены, что хотите удалить эту документацию?')">
-                                    <i class="fe fe-trash"></i> Удалить
-                                </button>
-                            </form>
                         </td>
                     </tr>
 
@@ -200,8 +193,8 @@
                                             <small class="form-text text-muted">Разрешенные форматы: jpg, jpeg, png, pdf, doc, docx, xls, xlsx, ppt, pptx. Максимальный размер: 10MB</small>
                                         </div>
                                         <div class="form-group">
-                                            <label for="notes{{ $documentation->id }}">Комментарий</label>
-                                            <textarea name="notes" id="notes{{ $documentation->id }}" class="form-control" rows="3" placeholder="Комментарий к сдаче этапа (необязательно)"></textarea>
+                                            <label for="comment{{ $documentation->id }}">Комментарий</label>
+                                            <textarea name="comment" id="comment{{ $documentation->id }}" class="form-control" rows="3" placeholder="Комментарий к сдаче этапа (необязательно)"></textarea>
                                         </div>
                                     </div>
                                     <div class="modal-footer">
@@ -216,7 +209,7 @@
                     {{-- Модалка подтверждения для менеджера --}}
                     <div class="modal fade" id="confirmModalManager{{ $documentation->id }}" tabindex="-1">
                         <div class="modal-dialog" role="document">
-                            <form method="POST" action="{{ route('employee.documentations.confirm', ['documentation' => $documentation->id, 'role' => 'manager']) }}" enctype="multipart/form-data">
+                            <form method="POST" action="{{ route('employee.documentations.confirm', ['documentation' => $documentation->id, 'role' => 'manager']) }}">
                                 @csrf
                                 <div class="modal-content">
                                     <div class="modal-header">
@@ -224,12 +217,15 @@
                                         <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                                     </div>
                                     <div class="modal-body">
-                                        <p>Вы уверены, что хотите подтвердить документацию как менеджер?</p>
-                                        <div class="form-group">
-                                            <label for="media{{ $documentation->id }}">Прикрепить файлы</label>
-                                            <input type="file" name="media[]" id="media{{ $documentation->id }}" class="form-control-file" required multiple>
-                                            <small class="form-text text-muted">Необходимо прикрепить хотя бы один файл.</small>
+                                        <div class="mb-3">
+                                            <strong>Заказ №{{ optional($documentation->order)->order_number ?? $documentation->order_id }}</strong> - {{ optional($documentation->order)->customer_name }}
+                                            <br><small class="text-muted">{{ optional($documentation->order)->address }}</small>
+                                            <br><small class="text-muted">Тел: {{ optional($documentation->order)->phone_number ?? '—' }}</small>
+                                            @if(optional($documentation->order)->total_amount)
+                                                <br><small class="text-muted">Стоимость: {{ number_format($documentation->order->total_amount, 0, '.', ' ') }} ₽</small>
+                                            @endif
                                         </div>
+                                        <p>Вы уверены, что хотите подтвердить документацию как менеджер?</p>
                                         <div class="form-group">
                                             <label for="notes{{ $documentation->id }}">Комментарий</label>
                                             <textarea name="notes" id="notes{{ $documentation->id }}" class="form-control" rows="3" placeholder="Комментарий к сдаче этапа (необязательно)"></textarea>

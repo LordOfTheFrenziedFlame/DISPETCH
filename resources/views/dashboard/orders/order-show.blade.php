@@ -25,6 +25,10 @@
                     <p>{{ optional($order->measurement)->notes ?: '—' }}</p>
                 </div>
                 <div class="col-md-6">
+                    <h5>Комментарий договора</h5>
+                    <p>{{ optional($order->contract)->comment ?: '—' }}</p>
+                </div>
+                <div class="col-md-6">
                     <h5>Комментарий производства</h5>
                     <p>{{ optional($order->production)->notes ?: '—' }}</p>
                 </div>

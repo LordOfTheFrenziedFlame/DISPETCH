@@ -14,14 +14,6 @@
         </ul>
     </div>
 @endif
-@if (session('success'))
-    <div class="alert alert-success alert-dismissible">
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
-        {{ session('success') }}
-    </div>
-@endif
 
 <div class="card my-4">
     <div class="card-header d-flex justify-content-between align-items-center">
@@ -44,6 +36,14 @@
             @endif
         </h3>
         <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#calendarModal">
+                <i class="fe fe-calendar"></i> Календарь
+                @if(request('manager_id'))
+                    @if($selectedEmployee)
+                        <small>({{ $selectedEmployee->name }})</small>
+                    @endif
+                @endif
+            </button>
             <a href="{{ route('employee.productions.index') }}" class="btn btn-sm btn-outline-primary">
                 <i class="fe fe-rotate-ccw"></i> 
                 @if(request('manager_id'))
@@ -54,13 +54,23 @@
             </a>
             <div class="dropdown">
                 <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" id="sortEmployeeDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="fe fe-user"></i> Фильтр по менеджерам
+                    <i class="fe fe-user"></i> Фильтр по сотрудникам
                 </button>
                 <div class="dropdown-menu" aria-labelledby="sortEmployeeDropdown">
                     @foreach($employees as $employee)
                         <a class="dropdown-item {{ request('manager_id') == $employee->id ? 'active' : '' }}" href="{{ route('employee.productions.index', ['manager_id' => $employee->id]) }}">
                             {{ $employee->name }} 
-                            <small class="text-muted">(Менеджер)</small>
+                            <small class="text-muted">
+                                @if($employee->role === 'manager')
+                                    (Менеджер)
+                                @elseif($employee->role === 'surveyor')
+                                    (Замерщик)
+                                @elseif($employee->role === 'constructor')
+                                    (Конструктор)
+                                @elseif($employee->role === 'installer')
+                                    (Монтажник)
+                                @endif
+                            </small>
                             @if(request('manager_id') == $employee->id)
                                 <i class="fe fe-check ms-2"></i>
                             @endif
@@ -68,9 +78,6 @@
                     @endforeach
                 </div>
             </div>
-            <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#calendarModal">
-                <i class="fe fe-calendar"></i> Календарь
-            </button>
         </div>
     </div>
 
@@ -81,9 +88,9 @@
                     <th>№ Заказа</th>
                     <th>Клиент</th>
                     <th>Адрес</th>
-                    <th>Установщик</th>
                     <th>Статус</th>
-                    <th>Дата готовности (по договору)</th>
+                    <th>Дата готовности</th>
+                    <th>Дата установки</th>
                     <th>Заметки</th>
                     <th>Действия</th>
                 </tr>
@@ -101,17 +108,13 @@
                             <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ optional($production->order)->address ?: '—' }}</a>
                         </td>
                         <td>
-                            @if(optional($production->order)->installer)
-                                <span class="badge badge-info">{{ optional($production->order)->installer->name }}</span>
-                            @else
-                                <span class="badge badge-danger">Не назначен</span>
-                            @endif
-                        </td>
-                        <td>
                             <span class="badge badge-warning my-3">В производстве</span>
                         </td>
                         <td>
                             {{ optional(optional($production->order)->contract)->ready_date ? \Carbon\Carbon::parse(optional(optional($production->order)->contract)->ready_date)->format('d.m.Y') : '—' }}
+                        </td>
+                        <td>
+                            {{ optional(optional($production->order)->contract)->installation_date ? \Carbon\Carbon::parse(optional(optional($production->order)->contract)->installation_date)->format('d.m.Y') : '—' }}
                         </td>
                         <td>
                             {{ \Illuminate\Support\Str::limit($production->notes ?? '—', 50) }}
@@ -145,6 +148,7 @@
                                         @endif
                                     </p>
                                     <p><strong>Дата готовности (по договору):</strong> {{ optional(optional($production->order)->contract)->ready_date ? \Carbon\Carbon::parse(optional(optional($production->order)->contract)->ready_date)->format('d.m.Y') : '—' }}</p>
+                                    <p><strong>Дата установки (по договору):</strong> {{ optional(optional($production->order)->contract)->installation_date ? \Carbon\Carbon::parse(optional(optional($production->order)->contract)->installation_date)->format('d.m.Y') : '—' }}</p>
                                     <p><strong>Заметки производства:</strong> {{ $production->notes ?? '—' }}</p>
                                     <p><strong>Статус:</strong> <span class="badge badge-warning">В производстве</span></p>
                                     <p><strong>Вложения по заказу:</strong></p>
@@ -167,6 +171,14 @@
                                 <form action="{{ route('employee.productions.complete', $production) }}" method="POST">
                                     @csrf
                                     <div class="modal-body">
+                                        <div class="mb-3">
+                                            <strong>Заказ №{{ optional($production->order)->order_number ?? $production->order_id }}</strong> - {{ optional($production->order)->customer_name }}
+                                            <br><small class="text-muted">{{ optional($production->order)->address }}</small>
+                                            <br><small class="text-muted">Тел: {{ optional($production->order)->phone_number ?? '—' }}</small>
+                                            @if(optional($production->order)->total_amount)
+                                                <br><small class="text-muted">Стоимость: {{ number_format($production->order->total_amount, 0, '.', ' ') }} ₽</small>
+                                            @endif
+                                        </div>
                                         <div class="alert alert-info">
                                             <strong>Установщик:</strong> 
                                             @if(optional($production->order)->installer)

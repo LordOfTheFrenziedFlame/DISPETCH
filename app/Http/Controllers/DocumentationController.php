@@ -196,32 +196,24 @@ class DocumentationController extends Controller
             return redirect()->back()->with('error', 'У вас нет доступа к подтверждению документации');
         }
 
-        $user = auth('employees')->user();
-        if ($user->role === 'manager') {
-            $request->validate([
-                'media' => 'required|array',
-                'media.*' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,ppt,pptx|max:10240',
-                'notes' => 'nullable|string',
-            ]);
-
-            $service = app(SaveMedia::class);
-            $service->attachable_type = Documentation::class;
-            $service->attachable_id = $documentation->id;
-            $service->file = $request->file('media');
-            $service->comment = $request->notes ?? '';
-            $success = $service->save();
-
-            if (!$success) {
-                return redirect()->back()->with('error', 'Не удалось загрузить медиа файлы.');
-            }
-        }
+        $request->validate([
+            'notes' => 'nullable|string',
+        ]);
 
         // Если установщик не назначен и текущий пользователь не менеджер, назначаем текущего пользователя
         if (!$documentation->order->installer_id && !$this->isManager()) {
-            $documentation->order->update(['installer_id' => $this->getCurrentUser()->id], ['notes' => $request->notes ?? '']);
+            $documentation->order->update(['installer_id' => $this->getCurrentUser()->id]);
         }
 
-        $documentation->update(['completed_at' => now(), 'status' => 'completed', 'notes' => $request->notes ?? '']);
+        $documentation->update(['completed_at' => now(), 'notes' => $request->notes ?? '']);
+
+        // Если у заказа есть договор без даты подписания – считаем, что сдача документации означает его подписание
+        if ($documentation->order && $documentation->order->contract && is_null($documentation->order->contract->signed_at)) {
+            $documentation->order->contract->update([
+                'signed_at' => now(),
+            ]);
+        }
+
         return redirect()->route('employee.documentations.index')->with('success', 'Документация успешно подтверждена');
     }
 

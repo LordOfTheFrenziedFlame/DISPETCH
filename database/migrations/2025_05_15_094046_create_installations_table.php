@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('installer_id')->nullable()->constrained('users');
             $table->timestamp('installed_at')->nullable();
             $table->text('result_notes')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

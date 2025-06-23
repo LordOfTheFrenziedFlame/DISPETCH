@@ -32,7 +32,7 @@ class ContractController extends Controller
         )->get();
 
         $employees = \App\Models\User::all(['id', 'name', 'role']);
-        $constructorsList = \App\Models\User::where('role', 'constructor')->get(['id','name']);
+        $constructorsList = \App\Models\User::all(['id','name']);
         $installersList = \App\Models\User::all(['id','name']);
         $selectedEmployee = request('manager_id') ? \App\Models\User::find(request('manager_id')) : null;
 
@@ -79,14 +79,14 @@ class ContractController extends Controller
 
         $request->validate([
             'order_id' => 'required|exists:orders,id',
-            'constructor_id' => 'nullable|exists:users,id',
+            'constructor_id' => 'required|exists:users,id',
             'contract_number' => 'nullable|string|max:255|unique:contracts,contract_number,' . $contract->id,
             'signed_at' => 'nullable|date',
             'comment' => 'nullable|string|max:1000',
             'final_amount' => 'nullable|numeric|min:0',
             'documentation_due_at' => 'nullable|date',
             'installation_date' => 'nullable|date',
-            'installer_id' => 'nullable|exists:users,id',
+            'installer_id' => 'required|exists:users,id',
             'product_type' => 'nullable|string|max:255',
             'ready_date' => 'nullable|date',
         ]);
@@ -114,11 +114,11 @@ class ContractController extends Controller
             'order_id' => 'required|exists:orders,id',
             'contract_number' => 'nullable|string|unique:contracts,contract_number|max:255',
             'signed_at' => 'nullable|date',
-            'constructor_id' => 'nullable|exists:users,id',
+            'constructor_id' => 'required|exists:users,id',
             'final_amount' => 'nullable|numeric|min:0',
             'documentation_due_at' => 'nullable|date',
             'installation_date' => 'nullable|date',
-            'installer_id' => 'nullable|exists:users,id',
+            'installer_id' => 'required|exists:users,id',
             'product_type' => 'nullable|string|max:255',
             'ready_date' => 'nullable|date',
         ]);

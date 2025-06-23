@@ -8,6 +8,7 @@ use App\Models\Contract;
 use App\Models\Documentation;
 use App\Models\Installation;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class OrderObserver
 {
@@ -153,7 +154,41 @@ class OrderObserver
      */
     public function restored(Order $order): void
     {
-        // No action needed on restoration
+        // При восстановлении заказа автоматически восстанавливаем связанные этапы,
+        // которые были мягко удалены вместе с заказом.
+
+        $relatedStages = [
+            'measurement',      // \App\Models\Measurement (есть SoftDeletes)
+            'contract',         // \App\Models\Contract   (есть SoftDeletes)
+            'documentation',    // \App\Models\Documentation (есть SoftDeletes)
+            'production',       // \App\Models\Production  (при необходимости)
+            'installation',     // \App\Models\Installation (при необходимости)
+        ];
+
+        foreach ($relatedStages as $relation) {
+            $relationObj = $order->{$relation}();
+
+            // Определяем, использует ли связанная модель SoftDeletes
+            $relatedClass = $relationObj->getRelated();
+            $usesSoftDeletes = in_array(SoftDeletes::class, class_uses_recursive(get_class($relatedClass)));
+
+            // Получаем связанную модель, учитывая soft-deleted
+            $instance = $usesSoftDeletes ? $relationObj->withTrashed()->first() : $relationObj->first();
+
+            if ($usesSoftDeletes && $instance && $instance->trashed()) {
+                $instance->restore();
+            }
+        }
+
+        // Логируем восстановление связанных сущностей
+        \Illuminate\Support\Facades\Log::info('Восстановлены связанные этапы заказа', [
+            'order_id' => $order->id,
+            'measurement_restored'   => optional($order->measurement)->exists ? !$order->measurement->trashed() : false,
+            'contract_restored'      => optional($order->contract)->exists ? (!$order->contract?->trashed() ?? false) : false,
+            'documentation_restored' => optional($order->documentation)->exists ? (!$order->documentation?->trashed() ?? false) : false,
+            'production_restored'    => optional($order->production)->exists ? (!$order->production?->trashed() ?? false) : false,
+            'installation_restored'  => optional($order->installation)->exists ? (!$order->installation?->trashed() ?? false) : false,
+        ]);
     }
 
     /**

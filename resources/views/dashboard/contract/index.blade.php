@@ -86,7 +86,10 @@
                     <th>№</th>
                     <th>Клиент</th>
                     <th>Адрес</th>
-                    <th>Дата подписания</th>
+                    <th>Дата создания</th>
+                    <th>Дата готовности документации</th>
+                    <th>Дата производства</th>
+                    <th>Дата установки</th>
                     <th>Действия</th>
                 </tr>
             </thead>
@@ -110,7 +113,22 @@
                         </td>
                         <td>
                             <a href="#" data-toggle="modal" data-target="#showModal{{ $contract->id }}">
-                                {{ $contract->signed_at ? \Carbon\Carbon::parse($contract->signed_at)->format('d.m.Y H:i') : '—' }}
+                                {{ $contract->created_at ? \Carbon\Carbon::parse($contract->created_at)->format('d.m.Y H:i') : '—' }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="#" data-toggle="modal" data-target="#showModal{{ $contract->id }}">
+                                {{ $contract->documentation_due_at ? \Carbon\Carbon::parse($contract->documentation_due_at)->format('d.m.Y') : '—' }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="#" data-toggle="modal" data-target="#showModal{{ $contract->id }}">
+                                {{ $contract->ready_date ? \Carbon\Carbon::parse($contract->ready_date)->format('d.m.Y') : '—' }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="#" data-toggle="modal" data-target="#showModal{{ $contract->id }}">
+                                {{ $contract->installation_date ? \Carbon\Carbon::parse($contract->installation_date)->format('d.m.Y') : '—' }}
                             </a>
                         </td>
                         <td class="actions-cell" style="min-width: 110px; white-space: nowrap;">
@@ -119,13 +137,6 @@
                             @else
                                 <span class="badge badge-warning align-middle" style="display:inline-block;vertical-align:middle;">В процессе</span>
                             @endif
-                            <form action="{{ route('employee.contracts.destroy', $contract) }}" method="POST" class="d-inline p-0 m-0" style="display:inline-block;vertical-align:middle;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-outline-danger btn-sm p-1 m-0" style="min-width:70px;" onclick="return confirm('Вы уверены, что хотите удалить этот договор?')">
-                                    <i class="fe fe-trash"></i> Удалить
-                                </button>
-                            </form>
                         </td>
                     </tr>
 
@@ -160,15 +171,15 @@
                                             <p>{{ optional($contract->constructor)->name ?: '—' }}</p>
                                         </div>
                                         <div class="col-md-6">
-                                            <h6>Дата подписания</h6>
-                                            <p>{{ $contract->signed_at ? $contract->signed_at->format('d.m.Y') : '—' }}</p>
+                                            <h6>Дата создания</h6>
+                                            <p>{{ $contract->created_at ? $contract->created_at->format('d.m.Y H:i') : '—' }}</p>
                                         </div>
                                         <div class="col-md-6">
                                             <h6>Сумма договора</h6>
                                             <p>{{ $contract->final_amount ? number_format($contract->final_amount, 2, '.', ' ') . ' руб.' : '—' }}</p>
                                         </div>
                                         <div class="col-md-6">
-                                            <h6>Срок подготовки документации</h6>
+                                            <h6>Дата готовности документации</h6>
                                             <p>{{ $contract->documentation_due_at ? $contract->documentation_due_at->format('d.m.Y') : '—' }}</p>
                                         </div>
                                         <div class="col-md-6">
@@ -195,11 +206,6 @@
                                         <button type="button" class="btn btn-outline-warning mb-2" data-toggle="modal" data-target="#editModal{{ $contract->id }}" data-dismiss="modal">
                                             <i class="fe fe-edit"></i> Редактировать
                                         </button>
-                                        @if(!$contract->signed_at)
-                                        <button type="button" class="btn btn-outline-success mb-2" data-toggle="modal" data-target="#signModal{{ $contract->id }}" data-dismiss="modal">
-                                            <i class="fe fe-check"></i> Сдать договор
-                                        </button>
-                                        @endif
                                     </div>
                                 </div>
                             </div>
