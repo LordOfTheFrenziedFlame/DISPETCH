@@ -87,59 +87,28 @@
             <div class="container">
                 <div class="row align-items-center w-100">
                     <div class="col">
+                        @php $role = auth('employees')->user()->role; @endphp
                         <ul class="nav nav-tabs border-0 flex-row">
-                            @if(auth('employees')->user()->role === 'surveyor')
-                                <li class="nav-item">
-                                    <a href="{{ route('employee.measurements.index') }}" class="nav-link {{ request()->routeIs('employee.measurements.*') ? 'active' : '' }}">
-                                        <i class="fe fe-ruler"></i> Замеры
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('employee.documentations.index') }}" class="nav-link {{ request()->routeIs('employee.documentations.*') ? 'active' : '' }}">
-                                        <i class="fe fe-book"></i> Документация
-                                    </a>
-                                </li>
-                            @else
-                                <li class="nav-item">
-                                    <a href="{{ route('employee.orders.index') }}" class="nav-link {{ request()->routeIs('employee.orders.*') ? 'active' : '' }}">
-                                        <i class="fe fe-file-text"></i> Заявки
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('employee.measurements.index') }}" class="nav-link {{ request()->routeIs('employee.measurements.*') ? 'active' : '' }}">
-                                        <i class="fe fe-ruler"></i> Замеры
-                                    </a>
-                                </li>
-                                <li class="nav-item {{ auth('employees')->user()->role !== 'manager' ? 'd-none' : '' }}">
-                                    <a href="{{ route('employee.contracts.index') }}" class="nav-link {{ request()->routeIs('employee.contracts.*') ? 'active' : '' }}">
-                                        <i class="fe fe-book"></i> Договоры
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('employee.documentations.index') }}" class="nav-link {{ request()->routeIs('employee.documentations.*') ? 'active' : '' }}">
-                                        <i class="fe fe-book"></i> Документация
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('employee.productions.index') }}" class="nav-link {{ request()->routeIs('employee.productions.*') ? 'active' : '' }}">
-                                        <i class="fe fe-box"></i> Производство
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('employee.installations.index') }}" class="nav-link {{ request()->routeIs('employee.installations.*') ? 'active' : '' }}">
-                                        <i class="fe fe-tool"></i> Установка
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('employee.users.index') }}" class="nav-link {{ request()->routeIs('employee.users.*') ? 'active' : '' }}">
-                                        <i class="fe fe-users"></i> Пользователи    
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('employee.archived.index') }}" class="nav-link {{ request()->routeIs('employee.archived.*') ? 'active' : '' }}">
-                                        <i class="fe fe-settings"></i> Архив
-                                    </a>
-                                </li>
+                            @if($role === 'manager')
+                                {{-- Менеджер видит всё --}}
+                                <li class="nav-item"><a href="{{ route('employee.orders.index') }}" class="nav-link {{ request()->routeIs('employee.orders.*') ? 'active' : '' }}"><i class="fe fe-file-text"></i> Заявки</a></li>
+                                <li class="nav-item"><a href="{{ route('employee.measurements.index') }}" class="nav-link {{ request()->routeIs('employee.measurements.*') ? 'active' : '' }}"><i class="fe fe-ruler"></i> Замеры</a></li>
+                                <li class="nav-item"><a href="{{ route('employee.contracts.index') }}" class="nav-link {{ request()->routeIs('employee.contracts.*') ? 'active' : '' }}"><i class="fe fe-book"></i> Договоры</a></li>
+                                <li class="nav-item"><a href="{{ route('employee.documentations.index') }}" class="nav-link {{ request()->routeIs('employee.documentations.*') ? 'active' : '' }}"><i class="fe fe-book"></i> Документация</a></li>
+                                <li class="nav-item"><a href="{{ route('employee.productions.index') }}" class="nav-link {{ request()->routeIs('employee.productions.*') ? 'active' : '' }}"><i class="fe fe-box"></i> Производство</a></li>
+                                <li class="nav-item"><a href="{{ route('employee.installations.index') }}" class="nav-link {{ request()->routeIs('employee.installations.*') ? 'active' : '' }}"><i class="fe fe-tool"></i> Установка</a></li>
+                                <li class="nav-item"><a href="{{ route('employee.users.index') }}" class="nav-link {{ request()->routeIs('employee.users.*') ? 'active' : '' }}"><i class="fe fe-users"></i> Пользователи</a></li>
+                                <li class="nav-item"><a href="{{ route('employee.archived.index') }}" class="nav-link {{ request()->routeIs('employee.archived.*') ? 'active' : '' }}"><i class="fe fe-settings"></i> Архив</a></li>
+                            @elseif($role === 'surveyor')
+                                <li class="nav-item"><a href="{{ route('employee.measurements.index') }}" class="nav-link {{ request()->routeIs('employee.measurements.*') ? 'active' : '' }}"><i class="fe fe-ruler"></i> Замеры</a></li>
+                                <li class="nav-item"><a href="{{ route('employee.documentations.index') }}" class="nav-link {{ request()->routeIs('employee.documentations.*') ? 'active' : '' }}"><i class="fe fe-book"></i> Документация</a></li>
+                            @elseif($role === 'constructor')
+                                <li class="nav-item"><a href="{{ route('employee.orders.index') }}" class="nav-link {{ request()->routeIs('employee.orders.*') ? 'active' : '' }}"><i class="fe fe-file-text"></i> Заявки</a></li>
+                                <li class="nav-item"><a href="{{ route('employee.documentations.index') }}" class="nav-link {{ request()->routeIs('employee.documentations.*') ? 'active' : '' }}"><i class="fe fe-book"></i> Документация</a></li>
+                                <li class="nav-item"><a href="{{ route('employee.productions.index') }}" class="nav-link {{ request()->routeIs('employee.productions.*') ? 'active' : '' }}"><i class="fe fe-box"></i> Производство</a></li>
+                                <li class="nav-item"><a href="{{ route('employee.installations.index') }}" class="nav-link {{ request()->routeIs('employee.installations.*') ? 'active' : '' }}"><i class="fe fe-tool"></i> Установка</a></li>
+                            @elseif($role === 'installer')
+                                <li class="nav-item"><a href="{{ route('employee.installations.index') }}" class="nav-link {{ request()->routeIs('employee.installations.*') ? 'active' : '' }}"><i class="fe fe-tool"></i> Установка</a></li>
                             @endif
                         </ul>
                     </div>

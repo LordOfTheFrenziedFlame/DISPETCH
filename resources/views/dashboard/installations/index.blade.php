@@ -179,11 +179,78 @@
                                                 <i class="fe fe-check"></i> Подтвердить установку
                                             </button>
                                         @endif
-                                        <a href="{{ route('employee.installations.edit', $installation) }}" class="btn btn-outline-warning mb-2">
+                                        <button type="button" class="btn btn-outline-warning mb-2" data-toggle="modal" data-target="#editModal{{ $installation->id }}">
                                             <i class="fe fe-edit"></i> Редактировать
-                                        </a>
+                                        </button>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Модалка: Редактирование установки --}}
+                    <div class="modal fade" id="editModal{{ $installation->id }}" tabindex="-1">
+                        <div class="modal-dialog modal-lg" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Редактирование установки №{{ $installation->id }}</h5>
+                                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                                </div>
+                                <form method="POST" action="{{ route('employee.installations.update', $installation) }}">
+                                    @csrf
+                                    @method('PATCH')
+                                    <div class="modal-body">
+                                        <div class="form-group mb-3">
+                                            <label for="order_id{{ $installation->id }}">Заказ</label>
+                                            <select class="form-control" id="order_id{{ $installation->id }}" name="order_id" required>
+                                                @foreach($orders as $order)
+                                                    <option value="{{ $order->id }}" {{ $order->id == $installation->order_id ? 'selected' : '' }}>
+                                                        Заказ #{{ $order->order_number }} - {{ $order->customer_name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <div class="form-group mb-3">
+                                            <label for="documentation_id{{ $installation->id }}">Документация</label>
+                                            <select class="form-control" id="documentation_id{{ $installation->id }}" name="documentation_id">
+                                                <option value="">Выберите документацию</option>
+                                                @foreach($documentations as $documentation)
+                                                    <option value="{{ $documentation->id }}" {{ $documentation->id == $installation->documentation_id ? 'selected' : '' }}>
+                                                        Заказ #{{ $documentation->order->order_number }} - {{ Str::limit($documentation->description, 50) }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <div class="form-group mb-3">
+                                            <label for="installer_id{{ $installation->id }}">Установщик</label>
+                                            <select class="form-control" id="installer_id{{ $installation->id }}" name="installer_id">
+                                                <option value="">Выберите установщика</option>
+                                                @foreach($installers as $installer)
+                                                    <option value="{{ $installer->id }}" {{ $installer->id == $installation->installer_id ? 'selected' : '' }}>
+                                                        {{ $installer->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <div class="form-group mb-3">
+                                            <label for="installed_at{{ $installation->id }}">Дата установки</label>
+                                            <input type="datetime-local" class="form-control" id="installed_at{{ $installation->id }}" name="installed_at"
+                                                   value="{{ optional($installation->installed_at)->format('Y-m-d\TH:i') }}">
+                                        </div>
+
+                                        <div class="form-group mb-3">
+                                            <label for="result_notes{{ $installation->id }}">Заметки по результату</label>
+                                            <textarea class="form-control" id="result_notes{{ $installation->id }}" name="result_notes" rows="4">{{ $installation->result_notes }}</textarea>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                                        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>

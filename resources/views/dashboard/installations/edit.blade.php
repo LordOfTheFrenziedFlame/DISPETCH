@@ -24,7 +24,7 @@
                     <label for="documentation_id">Документация</label>
                     <select class="form-control" id="documentation_id" name="documentation_id">
                         <option value="">Выберите документацию</option>
-                        @foreach(\App\Models\Documentation::with('order')->get() as $documentation)
+                        @foreach($documentations as $documentation)
                             <option value="{{ $documentation->id }}" {{ $documentation->id == old('documentation_id', $installation->documentation_id) ? 'selected' : '' }}>
                                 Заказ #{{ $documentation->order->order_number }} - {{ Str::limit($documentation->description, 50) }}
                             </option>

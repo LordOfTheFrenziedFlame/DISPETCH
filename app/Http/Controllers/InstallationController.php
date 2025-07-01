@@ -71,7 +71,14 @@ class InstallationController extends Controller
         $employees = \App\Models\User::all(['id', 'name', 'role']);
         $selectedEmployee = $request->get('manager_id') ? \App\Models\User::find($request->get('manager_id')) : null;
         
-        return view('dashboard.installations.index', compact('installations', 'employees', 'selectedEmployee'));
+        // Данные для модалки редактирования (чтобы не делать запросы во вью)
+        $orders = \App\Models\Order::all(['id', 'order_number', 'customer_name']);
+        $installers = \App\Models\User::where('role', 'installer')->get(['id', 'name']);
+        $documentations = \App\Models\Documentation::with('order:id,order_number')
+            ->whereHas('order')
+            ->get();
+        
+        return view('dashboard.installations.index', compact('installations', 'employees', 'selectedEmployee', 'orders', 'installers', 'documentations'));
     }
 
     public function create()
@@ -82,8 +89,11 @@ class InstallationController extends Controller
         
         $orders = \App\Models\Order::where('status', '!=', 'completed')->get(['id', 'order_number', 'customer_name']);
         $installers = \App\Models\User::where('role', 'installer')->get(['id', 'name']);
+        $documentations = \App\Models\Documentation::with('order:id,order_number')
+            ->whereHas('order')
+            ->get();
         
-        return view('dashboard.installations.create', compact('orders', 'installers'));
+        return view('dashboard.installations.create', compact('orders', 'installers', 'documentations'));
     }
 
     public function store(Request $request)
@@ -120,8 +130,11 @@ class InstallationController extends Controller
         
         $orders = \App\Models\Order::all(['id', 'order_number', 'customer_name']);
         $installers = \App\Models\User::where('role', 'installer')->get(['id', 'name']);
+        $documentations = \App\Models\Documentation::with('order:id,order_number')
+            ->whereHas('order')
+            ->get();
         
-        return view('dashboard.installations.edit', compact('installation', 'orders', 'installers'));
+        return view('dashboard.installations.edit', compact('installation', 'orders', 'installers', 'documentations'));
     }
 
     public function update(Request $request, Installation $installation)

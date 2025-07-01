@@ -85,10 +85,10 @@
         <table class="table card-table table-vcenter text-nowrap table-productions">
             <thead>
                 <tr>
+                    <th>№</th>
                     <th>№ Заказа</th>
                     <th>Клиент</th>
                     <th>Адрес</th>
-                    <th>Статус</th>
                     <th>Дата готовности</th>
                     <th>Дата установки</th>
                     <th>Заметки</th>
@@ -99,6 +99,9 @@
                 @foreach ($productions as $production)
                     <tr>
                         <td>
+                            <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ $production->id }}</a>
+                        </td>
+                        <td>
                              <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ optional($production->order)->order_number ?: '—' }}</a>
                         </td>
                         <td>
@@ -106,9 +109,6 @@
                         </td>
                         <td>
                             <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ optional($production->order)->address ?: '—' }}</a>
-                        </td>
-                        <td>
-                            <span class="badge badge-warning my-3">В производстве</span>
                         </td>
                         <td>
                             {{ optional(optional($production->order)->contract)->ready_date ? \Carbon\Carbon::parse(optional(optional($production->order)->contract)->ready_date)->format('d.m.Y') : '—' }}
@@ -120,10 +120,14 @@
                             {{ \Illuminate\Support\Str::limit($production->notes ?? '—', 50) }}
                         </td>
                         <td>
-                            <button type="button" class="btn btn-sm btn-outline-success" data-toggle="modal" data-target="#completeProductionModal{{ $production->id }}"
-                                {{ !optional($production->order)->installer_id ? 'disabled title="Сначала назначьте установщика в заказе"' : '' }}>
-                                <i class="fe fe-check"></i> Завершить
-                            </button>
+                            @if($production->completed_at)
+                                <span class="badge badge-success">Выполнен</span>
+                            @else
+                                <button type="button" class="btn btn-sm btn-outline-success" data-toggle="modal" data-target="#completeProductionModal{{ $production->id }}"
+                                    {{ !optional($production->order)->installer_id ? 'disabled title="Сначала назначьте установщика в заказе"' : '' }}>
+                                    <i class="fe fe-check"></i> Завершить
+                                </button>
+                            @endif
                         </td>
                     </tr>
 
@@ -150,7 +154,6 @@
                                     <p><strong>Дата готовности (по договору):</strong> {{ optional(optional($production->order)->contract)->ready_date ? \Carbon\Carbon::parse(optional(optional($production->order)->contract)->ready_date)->format('d.m.Y') : '—' }}</p>
                                     <p><strong>Дата установки (по договору):</strong> {{ optional(optional($production->order)->contract)->installation_date ? \Carbon\Carbon::parse(optional(optional($production->order)->contract)->installation_date)->format('d.m.Y') : '—' }}</p>
                                     <p><strong>Заметки производства:</strong> {{ $production->notes ?? '—' }}</p>
-                                    <p><strong>Статус:</strong> <span class="badge badge-warning">В производстве</span></p>
                                     <p><strong>Вложения по заказу:</strong></p>
                                     @include('dashboard.partials.attachments-list', ['attachments' => $production->order->all_attachments])
                                 </div>

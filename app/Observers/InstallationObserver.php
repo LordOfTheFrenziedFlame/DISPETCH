@@ -25,6 +25,12 @@ class InstallationObserver
             if ($order) {
                 $order->status = 'completed';
                 $order->save();
+
+                if ($order->contract && is_null($order->contract->signed_at)) {
+                    $order->contract->update([
+                        'signed_at' => now(),
+                    ]);
+                }
             }
         }
     }

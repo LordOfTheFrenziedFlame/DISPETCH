@@ -207,12 +207,7 @@ class DocumentationController extends Controller
 
         $documentation->update(['completed_at' => now(), 'notes' => $request->notes ?? '']);
 
-        // Если у заказа есть договор без даты подписания – считаем, что сдача документации означает его подписание
-        if ($documentation->order && $documentation->order->contract && is_null($documentation->order->contract->signed_at)) {
-            $documentation->order->contract->update([
-                'signed_at' => now(),
-            ]);
-        }
+        // Подписание договора перенесено в InstallationObserver (финальный этап)
 
         return redirect()->route('employee.documentations.index')->with('success', 'Документация успешно подтверждена');
     }
