@@ -75,7 +75,7 @@ trait HasRolePermissions
      */
     protected function canManageMeasurements(): bool
     {
-        return in_array(Auth::guard('employees')->user()->role, ['manager', 'surveyor']);
+        return in_array(Auth::guard('employees')->user()->role, ['manager', 'surveyor', 'constructor']);
     }
 
     /**

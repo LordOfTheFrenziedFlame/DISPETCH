@@ -33,11 +33,12 @@
                 @endif
             </h3>
             <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
-                <form method="GET" action="{{ route('employee.orders.orderByNumber') }}" class="d-flex align-items-center me-2 mb-0">
+                <form method="GET" action="{{ route('employee.orders.orderByNumber') }}" class="d-flex align-items-center mb-0">
                     <input type="text" name="order_number" class="form-control form-control-sm me-2" placeholder="Поиск по номеру заказа" value="{{ request('order_number') }}">
-                    <button type="submit" class="btn btn-sm btn-outline-secondary">Поиск</button>
+                    <button type="submit" class="btn btn-sm btn-outline-secondary" style="white-space: nowrap; min-width: 60px;">Поиск</button>
                 </form>
-                <a href="{{ route('employee.orders.index') }}" class="btn btn-sm btn-outline-primary me-2">
+                <div style="width:10px;"></div>
+                <a href="{{ route('employee.orders.index') }}" class="btn btn-sm btn-outline-primary">
                     <i class="fe fe-rotate-ccw"></i> 
                     @if(request('manager_id'))
                         Сбросить фильтр
@@ -45,13 +46,13 @@
                         Обновить
                     @endif
                 </a>
-                <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-toggle="modal" data-target="#calendarModal">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#calendarModal">
                     <i class="fe fe-calendar"></i> Календарь
                     @if(request('manager_id') && isset($selectedManager) && $selectedManager)
                         <small>({{ $selectedManager->name }})</small>
                     @endif
                 </button>
-                <div class="dropdown me-2">
+                <div class="dropdown">
                     <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" id="sortManagerDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i class="fe fe-user"></i> Фильтр по менеджерам
                     </button>

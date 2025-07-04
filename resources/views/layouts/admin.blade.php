@@ -104,6 +104,7 @@
                                 <li class="nav-item"><a href="{{ route('employee.documentations.index') }}" class="nav-link {{ request()->routeIs('employee.documentations.*') ? 'active' : '' }}"><i class="fe fe-book"></i> Документация</a></li>
                             @elseif($role === 'constructor')
                                 <li class="nav-item"><a href="{{ route('employee.orders.index') }}" class="nav-link {{ request()->routeIs('employee.orders.*') ? 'active' : '' }}"><i class="fe fe-file-text"></i> Заявки</a></li>
+                                <li class="nav-item"><a href="{{ route('employee.measurements.index') }}" class="nav-link {{ request()->routeIs('employee.measurements.*') ? 'active' : '' }}"><i class="fe fe-ruler"></i> Замеры</a></li>
                                 <li class="nav-item"><a href="{{ route('employee.documentations.index') }}" class="nav-link {{ request()->routeIs('employee.documentations.*') ? 'active' : '' }}"><i class="fe fe-book"></i> Документация</a></li>
                                 <li class="nav-item"><a href="{{ route('employee.productions.index') }}" class="nav-link {{ request()->routeIs('employee.productions.*') ? 'active' : '' }}"><i class="fe fe-box"></i> Производство</a></li>
                                 <li class="nav-item"><a href="{{ route('employee.installations.index') }}" class="nav-link {{ request()->routeIs('employee.installations.*') ? 'active' : '' }}"><i class="fe fe-tool"></i> Установка</a></li>

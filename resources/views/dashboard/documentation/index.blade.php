@@ -84,6 +84,7 @@
             <thead>
                 <tr>
                     <th>№</th>
+                    <th>Договор</th>
                     <th>Клиент</th>
                     <th>Адрес</th>
                     <th>Конструктор</th>
@@ -97,6 +98,11 @@
                         <td>
                             <a href="#" data-toggle="modal" data-target="#showModal{{ $documentation->id }}">
                                 {{ $documentation->id }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="#" data-toggle="modal" data-target="#showModal{{ $documentation->id }}">
+                                {{ optional($documentation->contract)->contract_number ?? '—' }}
                             </a>
                         </td>
                         <td>
@@ -117,11 +123,11 @@
                                 {{ optional($documentation->contract?->documentation_due_at)->format('d.m.Y') ?? '—' }}
                             </a>
                         </td>
-                        <td class="actions-cell" style="min-width: 110px; white-space: nowrap;">
+                        <td>
                             @if($documentation->completed_at)
-                                <span class="badge badge-success align-middle" style="display:inline-block;vertical-align:middle;">Выполнен</span>
+                                <span class="btn btn-outline-success w-100 my-3">Выполнен</span>
                             @else
-                                <span class="badge badge-warning align-middle" style="display:inline-block;vertical-align:middle;">В процессе</span>
+                                <span class="btn btn-outline-warning w-100 my-3">В процессе</span>
                             @endif
                         </td>
                     </tr>
@@ -135,6 +141,7 @@
                                     <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                                 </div>
                                 <div class="modal-body">
+                                    <p><strong>Номер договора:</strong> {{ optional($documentation->contract)->contract_number ?? '—' }}</p>
                                     <p><strong>Клиент:</strong> {{ optional($documentation->order)->customer_name }}</p>
                                     <p><strong>Адрес:</strong> {{ optional($documentation->order)->address }}</p>
                                     <p><strong>Дата завершения:</strong> {{ optional($documentation->contract?->documentation_due_at)->format('d.m.Y') ?? '—' }}</p>
@@ -164,7 +171,7 @@
                                             </button>
                                             @endif
                                         @else
-                                            <span class="badge badge-success">Выполнен</span>
+                                            <button type="button" class="btn btn-success" disabled>Выполнен</button>
                                         @endif
                                         <button type="button" class="btn btn-outline-primary" data-toggle="modal" data-target="#editModal{{ $documentation->id }}">Редактировать</button>
                                         <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#attachModal{{ $documentation->id }}" data-dismiss="modal">

@@ -29,12 +29,14 @@ class SaveMedia
         'application/vnd.ms-excel',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        // Generic binary stream (commonly used when specific MIME is unknown)
+        'application/octet-stream',
     ];
 
     // Разрешенные расширения
     private const ALLOWED_EXTENSIONS = [
-        'jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'
+        'jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'dbs'
     ];
 
     // Запрещенные расширения (исполняемые файлы)
@@ -94,7 +96,9 @@ class SaveMedia
 
             // Проверка MIME типа
             $mimeType = $file->getMimeType();
-            if (!in_array($mimeType, self::ALLOWED_MIME_TYPES)) {
+            // Для файлов .dbs допускаем любой MIME-тип,
+            // так как FileInfo может отдавать разные значения (x-dbf, x-sqlite3 и т.д.)
+            if ($extension !== 'dbs' && !in_array($mimeType, self::ALLOWED_MIME_TYPES)) {
                 $errors[] = "Файл {$file->getClientOriginalName()} имеет неразрешенный тип";
                 Log::warning('Попытка загрузки файла неразрешенного типа', [
                     'filename' => $file->getClientOriginalName(),

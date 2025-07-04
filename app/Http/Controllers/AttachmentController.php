@@ -24,7 +24,7 @@ class AttachmentController extends Controller
 
         $request->validate([
             'media' => 'required|array',
-            'media.*' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,ppt,pptx|max:10240',
+            'media.*' => 'required|file|max:10240',
             'comment' => 'nullable|string',
         ]);
 
@@ -71,7 +71,7 @@ class AttachmentController extends Controller
 
         $request->validate([
             'media' => 'required|array',
-            'media.*' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,ppt,pptx|max:10240',
+            'media.*' => 'required|file|max:10240',
             'comment' => 'nullable|string',
         ]);
 
@@ -107,7 +107,7 @@ class AttachmentController extends Controller
 
         $request->validate([
             'media' => 'required|array',
-            'media.*' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,ppt,pptx|max:10240',
+            'media.*' => 'required|file|max:10240',
             'comment' => 'nullable|string',
         ]);
 

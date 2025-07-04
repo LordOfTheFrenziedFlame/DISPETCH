@@ -167,7 +167,7 @@ class ContractController extends Controller
 
         $request->validate([
             'signed_file'   => 'required',
-            'signed_file.*' => 'file|mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,ppt,pptx|max:10240',
+            'signed_file.*' => 'file|mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,ppt,pptx,dbs|max:10240',
             'comment'       => 'nullable|string|max:1000',
             'final_amount'  => 'nullable|numeric|min:0',
             'documentation_due_at' => 'nullable|date',

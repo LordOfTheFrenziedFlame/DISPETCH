@@ -26,6 +26,11 @@ class ProductionController extends Controller
 
     public function complete(Production $production, Request $request)
     {
+
+        if(auth('employees')->user()->role !== 'manager'){
+            return redirect()->back()->with('error', 'У вас нет доступа к завершению производства');
+        }
+
         $request->validate([
             'notes' => 'nullable|string',
         ]);

@@ -131,11 +131,11 @@
                                 {{ $contract->installation_date ? \Carbon\Carbon::parse($contract->installation_date)->format('d.m.Y') : '—' }}
                             </a>
                         </td>
-                        <td class="actions-cell" style="min-width: 110px; white-space: nowrap;">
+                        <td>
                             @if($contract->signed_at)
-                                <span class="badge badge-success align-middle" style="display:inline-block;vertical-align:middle;">Выполнен</span>
+                                <span class="btn btn-outline-success w-100 my-3">Выполнен</span>
                             @else
-                                <span class="badge badge-warning align-middle" style="display:inline-block;vertical-align:middle;">В процессе</span>
+                                <span class="btn btn-outline-warning w-100 my-3">В процессе</span>
                             @endif
                         </td>
                     </tr>
@@ -342,7 +342,6 @@
                                             <textarea name="comment" id="comment_edit{{ $contract->id }}" class="form-control" rows="3">{{ $contract->comment }}</textarea>
                                         </div>
                                         <input type="hidden" name="order_id" value="{{ $contract->order_id }}">
-                                        <input type="hidden" name="contract_number" value="{{ $contract->contract_number }}">
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>

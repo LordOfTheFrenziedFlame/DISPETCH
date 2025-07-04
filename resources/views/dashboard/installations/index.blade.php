@@ -85,6 +85,7 @@
                 <tr>
                     <th>№</th>
                     <th>Клиент</th>
+                    <th>Договор</th>
                     <th>Адрес</th>
                     <th>Плановая дата</th>
                     <th>Дата установки</th>
@@ -103,6 +104,11 @@
                         <td>
                             <a href="#" data-toggle="modal" data-target="#showModal{{ $installation->id }}">
                                 {{ $installation->order->customer_name }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="#" data-toggle="modal" data-target="#showModal{{ $installation->id }}">
+                                {{ optional(optional($installation->order)->contract)->contract_number ?? '—' }}
                             </a>
                         </td>
                         <td>
@@ -126,13 +132,13 @@
                         <td>
                             <div class="d-flex gap-2">
                             @if($installation->installed_at)
-                                    <span class="badge badge-success">Выполнен</span>
+                                    <span class="btn btn-outline-success w-100 my-3">Выполнен</span>
                             @else
-                                    <span class="badge badge-warning">В процессе</span>
-                                    <button type="button" class="btn btn-outline-success btn-sm p-1 m-0"
+                                    <span class="btn btn-outline-warning w-100 my-3">В процессе</span>
+                                    <button type="button" class="btn btn-outline-success btn-sm p-1 m-0 w-100 my-3"
                                             style="min-width:70px;"
                                             data-toggle="modal" data-target="#confirmModal{{ $installation->id }}">
-                                        <i class="fe fe-check"></i> Подтвердить
+                                        <i class="badge fe-check w-100"></i> Подтвердить
                                     </button>
                             @endif
                             </div>
@@ -148,6 +154,7 @@
                                     <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                                 </div>
                                 <div class="modal-body">
+                                    <p><strong>Договор №:</strong> {{ optional(optional($installation->order)->contract)->contract_number ?? '—' }}</p>
                                     <p><strong>Заказ:</strong> Заказ №{{ $installation->order->order_number }}</p>
                                     <p><strong>Клиент:</strong> {{ $installation->order->customer_name }}</p>
                                     <p><strong>Адрес:</strong> {{ $installation->order->address }}</p>

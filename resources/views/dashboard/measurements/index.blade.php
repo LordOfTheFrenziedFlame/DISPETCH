@@ -147,9 +147,9 @@
                                         <i class="fe fe-check"></i> Отметить как сданный
                                     </button>
                                 @elseif($measurement->isCompleted())
-                                    <span class="badge badge-success">Выполнен</span>
+                                    <span class="btn btn-outline-success w-100 my-3">Выполнен</span>
                                 @elseif($measurement->isCancelled())
-                                    <span class="badge badge-danger">Отменён</span>
+                                    <span class="btn btn-outline-danger w-100 my-3">Отменён</span>
                                 @endif
                             </td>
                         </tr>

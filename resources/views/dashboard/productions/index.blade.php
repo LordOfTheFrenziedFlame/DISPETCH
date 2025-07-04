@@ -87,6 +87,7 @@
                 <tr>
                     <th>№</th>
                     <th>№ Заказа</th>
+                    <th>№ Договора</th>
                     <th>Клиент</th>
                     <th>Адрес</th>
                     <th>Дата готовности</th>
@@ -105,6 +106,9 @@
                              <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ optional($production->order)->order_number ?: '—' }}</a>
                         </td>
                         <td>
+                            <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ optional(optional($production->order)->contract)->contract_number ?? '—' }}</a>
+                        </td>
+                        <td>
                             <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ optional($production->order)->customer_name ?: '—' }}</a>
                         </td>
                         <td>
@@ -121,9 +125,9 @@
                         </td>
                         <td>
                             @if($production->completed_at)
-                                <span class="badge badge-success">Выполнен</span>
+                                <span class="btn btn-outline-success w-100 my-3">Выполнен</span>
                             @else
-                                <button type="button" class="btn btn-sm btn-outline-success" data-toggle="modal" data-target="#completeProductionModal{{ $production->id }}"
+                                <button type="button" class="btn btn-sm btn-outline-success w-100 my-3" data-toggle="modal" data-target="#completeProductionModal{{ $production->id }}"
                                     {{ !optional($production->order)->installer_id ? 'disabled title="Сначала назначьте установщика в заказе"' : '' }}>
                                     <i class="fe fe-check"></i> Завершить
                                 </button>
@@ -140,6 +144,7 @@
                                     <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                                 </div>
                                 <div class="modal-body">
+                                    <p><strong>Договор №:</strong> {{ optional(optional($production->order)->contract)->contract_number ?? '—' }}</p>
                                     <p><strong>Заказ:</strong> №{{ optional($production->order)->order_number ?: '—' }}</p>
                                     <p><strong>Клиент:</strong> {{ optional($production->order)->customer_name ?: '—' }}</p>
                                     <p><strong>Адрес:</strong> {{ optional($production->order)->address ?: '—' }}</p>

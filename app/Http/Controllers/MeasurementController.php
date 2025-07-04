@@ -34,7 +34,15 @@ class MeasurementController extends Controller
                 $query->where('surveyor_id', $user->id)
                       ->orWhereNull('surveyor_id');
             });
-        } elseif ($user->role === 'manager') {
+        }
+        elseif ($user->role === 'constructor') {
+            // Конструктор видит только свои замеры + незакрепленные
+            $measurementsQuery->where(function ($query) use ($user) {
+                $query->where('measurements.surveyor_id', $user->id)
+                      ->orWhereNull('measurements.surveyor_id');
+            });
+        }
+         elseif ($user->role === 'manager') {
             // Менеджер видит все замеры, может фильтровать по конкретному замерщику
             if ($request->has('currentUserMeasurements')) {
                 $measurementsQuery->where('surveyor_id', $request->input('currentUserMeasurements'));
