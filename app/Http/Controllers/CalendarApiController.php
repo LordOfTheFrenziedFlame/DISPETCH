@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Documentation;
 use App\Models\Production;
 use App\Models\Installation;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use App\Traits\HasRolePermissions;
 use Carbon\Carbon;
@@ -24,9 +25,13 @@ class CalendarApiController extends Controller
         }
 
         $type = $request->query('type');
-        $currentUserMeasurements = $request->query('currentUserMeasurements');
-        $managerId = $request->query('manager_id');
+        $employeeId = $request->query('employee_id'); // Универсальный параметр для фильтрации
+        $managerId = $request->query('manager_id'); // Обратная совместимость
+        $currentUserMeasurements = $request->query('currentUserMeasurements'); // Обратная совместимость
         $user = $this->getCurrentUser();
+
+        // Нормализуем параметры фильтрации
+        $filterId = $employeeId ?? $managerId ?? $currentUserMeasurements;
 
         $orderEvents         = collect();
         $measurementEvents   = collect();
@@ -35,64 +40,75 @@ class CalendarApiController extends Controller
         $productionEvents    = collect();
         $installationEvents  = collect();
 
-        // --- Helper for color selection ---
-        $colorFor = function (?Carbon $deadline, $done = null) {
-            // Первым делом проверяем факт завершения / активной работы
-            // (done может быть boolean или Carbon – нам важна лишь истинность)
-            if ($done) {
-                return '#4caf50'; // зелёный – выполнено или в работе
+        // --- Helper for unified event formatting ---
+        $formatEvent = function ($item, $eventType, $title, $dateField = null, $url = null) use ($request) {
+            $date = null;
+            $backgroundColor = '#2196f3'; // Базовый синий цвет
+            $textColor = '#ffffff';
+            
+            // Определяем дату события
+            switch($eventType) {
+                case 'order':
+                    $date = $item->meeting_at;
+                    $backgroundColor = $this->getOrderColor($item);
+                    break;
+                case 'measurement':
+                    $date = $item->measured_at;
+                    $backgroundColor = $this->getMeasurementColor($item);
+                    break;
+                case 'contract':
+                    $date = $item->signed_at ?? $item->documentation_due_at;
+                    $backgroundColor = $this->getContractColor($item);
+                    break;
+                case 'documentation':
+                    $date = optional($item->order->contract)->documentation_due_at;
+                    $backgroundColor = $this->getDocumentationColor($item);
+                    break;
+                case 'production':
+                    $date = optional($item->order->contract)->ready_date;
+                    $backgroundColor = $this->getProductionColor($item);
+                    break;
+                case 'installation':
+                    $date = optional($item->order->contract)->installation_date;
+                    $backgroundColor = $this->getInstallationColor($item);
+                    break;
             }
 
-            // Далее обычная логика дедлайнов
-            if (is_null($deadline)) {
-                return '#2196f3'; // синий – нет дедлайна
-            }
-            $today = Carbon::today();
-            if ($deadline->lt($today)) {
-                return '#e53935'; // красный – просрочено
-            }
-            if ($deadline->lte($today->copy()->addDays(3))) {
-                return '#ffb300'; // жёлтый – крайний срок сегодня/завтра
-            }
-            return '#2196f3'; // синий – всё ещё в срок
+            return [
+                'type' => $eventType,
+                'id' => $item->id,
+                'title' => $title,
+                'start' => $date ? Carbon::parse($date)->toDateString() : null,
+                'backgroundColor' => $backgroundColor,
+                'borderColor' => $backgroundColor,
+                'textColor' => $textColor,
+                'url' => $url,
+                'extendedProps' => [
+                    'orderId' => $eventType === 'order' ? $item->id : ($item->order->id ?? null),
+                    'contractNumber' => $eventType === 'order' ? optional($item->contract)->contract_number : ($eventType === 'contract' ? $item->contract_number : optional($item->order->contract)->contract_number),
+                    'customerName' => $eventType === 'order' ? $item->customer_name : ($item->order->customer_name ?? null),
+                    'status' => $item->status ?? null,
+                    'eventType' => $eventType,
+                ]
+            ];
         };
 
         // Заказы
         if (!$type || $type === 'order') {
             $ordersQuery = Order::whereNotNull('meeting_at')
-                ->whereNull('deleted_at'); // Исключаем удаленные заказы
+                ->whereNull('deleted_at');
             
-            // Фильтрация по ролям
-            if ($this->isSurveyor()) {
-                // Замерщик видит только свои заказы или без назначенного замерщика
-                $ordersQuery->where(function($query) {
-                    $query->where('surveyor_id', $this->getCurrentUser()->id)
-                          ->orWhereNull('surveyor_id');
-                });
-            } elseif ($this->isConstructor()) {
-                // Конструктор видит заказы в работе
-                $ordersQuery->whereIn('status', ['in_progress', 'completed']);
-            } elseif ($this->isInstaller()) {
-                // Установщик видит заказы с готовой документацией
-                $ordersQuery->whereHas('documentation', function($query) {
-                    $query->whereNotNull('completed_at');
-                });
-            } elseif ($this->isManager() && $managerId) {
-                // Менеджер может фильтровать по ID менеджера
-                $ordersQuery->where('manager_id', $managerId);
-            }
+            $this->applyOrderFilters($ordersQuery, $filterId);
 
-            $orderEvents = $ordersQuery->with(['manager', 'surveyor', 'constructor', 'installer', 'contract'])->get()->map(function ($item) use ($colorFor) {
-                $isActiveOrDone = in_array($item->status, ['in_progress', 'completed']);
-
-                return [
-                    'type' => 'order',
-                    'id' => $item->id,
-                    'title' => 'Заказ #' . $item->id . ' (Заказ #' . $item->order_number . ' - ' . $item->customer_name . ')',
-                    'start' => optional($item->meeting_at)->toDateString(),
-                    'backgroundColor' => $colorFor($item->meeting_at ? Carbon::parse($item->meeting_at) : null, $isActiveOrDone),
-                    'borderColor'     => $colorFor($item->meeting_at ? Carbon::parse($item->meeting_at) : null, $isActiveOrDone),
-                ];
+            $orderEvents = $ordersQuery->with(['manager', 'surveyor', 'constructor', 'installer', 'contract'])->get()->map(function ($item) use ($formatEvent) {
+                $title = sprintf(
+                    '#%s - %s - %s',
+                    $item->id,
+                    optional($item->contract)->contract_number ?? 'Б/Н',
+                    $item->customer_name
+                );
+                
+                return $formatEvent($item, 'order', $title, 'meeting_at');
             });
         }
 
@@ -100,127 +116,89 @@ class CalendarApiController extends Controller
         if (!$type || $type === 'measurement') {
             $measurementsQuery = Measurement::whereNotNull('measured_at');
 
-            // Фильтрация по ролям для замеров
-            if ($this->isSurveyor()) {
-                // Замерщик видит только свои замеры
-                $measurementsQuery->where('surveyor_id', $user->id);
-            } elseif ($this->isManager() && $currentUserMeasurements) {
-                // Менеджер может фильтровать по конкретному замерщику
-                $measurementsQuery->where('surveyor_id', $currentUserMeasurements);
-            } elseif (!$this->isManager()) {
-                // Конструктор и установщик видят замеры в общем доступе
-                // (могут быть ограничены дополнительно если нужно)
-            }
+            $this->applyMeasurementFilters($measurementsQuery, $filterId);
 
-            // Фильтрация по не удалённым заказам
-            $measurementsQuery->whereHas('order', function ($query) {
-                $query->whereNull('deleted_at');
-            });
-
-            $measurementEvents = $measurementsQuery->with('order')->get()->map(function ($item) use ($colorFor) {
-                $isCompleted = $item->isCompleted();
-
-                return [
-                    'type' => 'measurement',
-                    'id' => $item->id,
-                    'title' => 'Замер #' . $item->id . ' (Заказ #' . optional($item->order)->order_number . ' - ' . optional($item->order)->customer_name . ')',
-                    'start' => $item->measured_at ? Carbon::parse($item->measured_at)->toIso8601String() : null,
-                    'backgroundColor' => $colorFor($item->measured_at ? Carbon::parse($item->measured_at) : null, $isCompleted),
-                    'borderColor'     => $colorFor($item->measured_at ? Carbon::parse($item->measured_at) : null, $isCompleted),
-                ];
+            $measurementEvents = $measurementsQuery->with(['order.contract', 'surveyor'])->get()->map(function ($item) use ($formatEvent) {
+                $title = sprintf(
+                    '#%d - %s - %s',
+                    $item->id,
+                    optional($item->order->contract)->contract_number ?? 'Б/Н',
+                    optional($item->order)->customer_name ?? 'Неизвестен'
+                );
+                
+                return $formatEvent($item, 'measurement', $title, 'measured_at');
             });
         }
 
         // Договоры
         if ($type === 'contract') {
-            // Только пользователи с доступом к договорам могут их видеть
             if (!$this->canViewContracts()) {
                 return response()->json(['error' => 'Access denied to contracts'], 403);
             }
 
             $contractsQuery = \App\Models\Contract::with('order');
-            $contractsQuery->whereHas('order', function($q) use ($managerId) {
-                $q->whereNull('deleted_at');
-                if ($this->isManager() && $managerId) {
-                    $q->where('manager_id', $managerId);
-                }
-            });
+            $this->applyContractFilters($contractsQuery, $filterId);
 
-            $contractEvents = $contractsQuery->get()->map(function ($contract) use ($colorFor) {
-                $startDate = $contract->signed_at
-                    ? \Carbon\Carbon::parse($contract->signed_at)
-                    : ($contract->documentation_due_at ? \Carbon\Carbon::parse($contract->documentation_due_at) : null);
-
-                return [
-                    'type' => 'contract',
-                    'id' => $contract->id,
-                    'title' => 'Договор #' . $contract->id . ' (Заказ #' . optional($contract->order)->order_number . ' - ' . optional($contract->order)->customer_name . ')',
-                    'start' => $startDate?->toIso8601String(),
-                    'url' => route('employee.contracts.index') . '#contract-' . $contract->id,
-                    'backgroundColor' => $colorFor($contract->documentation_due_at, $contract->signed_at),
-                    'borderColor'     => $colorFor($contract->documentation_due_at, $contract->signed_at),
-                ];
+            $contractEvents = $contractsQuery->get()->map(function ($contract) use ($formatEvent) {
+                $title = sprintf(
+                    '#%d - %s - %s',
+                    $contract->id,
+                    $contract->contract_number ?? 'Б/Н',
+                    optional($contract->order)->customer_name ?? 'Неизвестен'
+                );
+                
+                return $formatEvent($contract, 'contract', $title);
             });
         }
 
         // Документации
         if (!$type || $type === 'documentation') {
             $docsQuery = Documentation::with('order.contract');
+            $this->applyDocumentationFilters($docsQuery, $filterId);
 
-            $docsQuery->whereHas('order', function($q){
-                $q->whereNull('deleted_at');
-            });
-
-            $documentationEvents = $docsQuery->get()->map(function ($d) use ($colorFor) {
-                $deadline = optional(optional($d->order)->contract)->documentation_due_at;
-                return [
-                    'type'  => 'documentation',
-                    'id'    => $d->id,
-                    'title' => 'Документация #' . $d->id . ' (Заказ #' . optional($d->order)->order_number . ' - ' . optional($d->order)->customer_name . ')',
-                    'start' => $deadline ? Carbon::parse($deadline)->toIso8601String() : null,
-                    'backgroundColor' => $colorFor($deadline ? Carbon::parse($deadline) : null, $d->completed_at ? Carbon::parse($d->completed_at) : null),
-                    'borderColor'     => $colorFor($deadline ? Carbon::parse($deadline) : null, $d->completed_at ? Carbon::parse($d->completed_at) : null),
-                ];
+            $documentationEvents = $docsQuery->get()->map(function ($d) use ($formatEvent) {
+                $title = sprintf(
+                    '#%d - %s - %s',
+                    $d->id,
+                    optional($d->order->contract)->contract_number ?? 'Б/Н',
+                    optional($d->order)->customer_name ?? 'Неизвестен'
+                );
+                
+                return $formatEvent($d, 'documentation', $title);
             });
         }
 
         // Производства
         if (!$type || $type === 'production') {
             $prodQuery = Production::with('order.contract');
-            $prodQuery->whereHas('order', function($q){
-                $q->whereNull('deleted_at');
-            });
+            $this->applyProductionFilters($prodQuery, $filterId);
 
-            $productionEvents = $prodQuery->get()->map(function ($p) use ($colorFor) {
-                $deadline = optional(optional($p->order)->contract)->ready_date;
-                return [
-                    'type'  => 'production',
-                    'id'    => $p->id,
-                    'title' => 'Производство #' . $p->id . ' (Заказ #' . optional($p->order)->order_number . ' - ' . optional($p->order)->customer_name . ')',
-                    'start' => $deadline ? Carbon::parse($deadline)->toIso8601String() : null,
-                    'backgroundColor' => $colorFor($deadline ? Carbon::parse($deadline) : null, $p->completed_at),
-                    'borderColor'     => $colorFor($deadline ? Carbon::parse($deadline) : null, $p->completed_at),
-                ];
+            $productionEvents = $prodQuery->get()->map(function ($p) use ($formatEvent) {
+                $title = sprintf(
+                    '#%d - %s - %s',
+                    $p->id,
+                    optional($p->order->contract)->contract_number ?? 'Б/Н',
+                    optional($p->order)->customer_name ?? 'Неизвестен'
+                );
+                
+                return $formatEvent($p, 'production', $title);
             });
         }
 
         // Установки
         if (!$type || $type === 'installation') {
             $instQuery = Installation::with('order.contract');
-            $instQuery->whereHas('order', function($q){
-                $q->whereNull('deleted_at');
-            });
+            $this->applyInstallationFilters($instQuery, $filterId);
 
-            $installationEvents = $instQuery->get()->map(function ($i) use ($colorFor) {
-                $deadline = optional(optional($i->order)->contract)->installation_date;
-                return [
-                    'type'  => 'installation',
-                    'id'    => $i->id,
-                    'title' => 'Установка #' . $i->id . ' (Заказ #' . optional($i->order)->order_number . ' - ' . optional($i->order)->customer_name . ')',
-                    'start' => $deadline ? Carbon::parse($deadline)->toIso8601String() : null,
-                    'backgroundColor' => $colorFor($deadline ? Carbon::parse($deadline) : null, $i->installed_at),
-                    'borderColor'     => $colorFor($deadline ? Carbon::parse($deadline) : null, $i->installed_at),
-                ];
+            $installationEvents = $instQuery->get()->map(function ($i) use ($formatEvent) {
+                $title = sprintf(
+                    '#%d - %s - %s',
+                    $i->id,
+                    optional($i->order->contract)->contract_number ?? 'Б/Н',
+                    optional($i->order)->customer_name ?? 'Неизвестен'
+                );
+                
+                return $formatEvent($i, 'installation', $title);
             });
         }
 
@@ -234,5 +212,376 @@ class CalendarApiController extends Controller
             ->values();
 
         return response()->json($events);
+    }
+
+    /**
+     * Применить фильтры для заказов
+     */
+    private function applyOrderFilters($query, $filterId)
+    {
+        // Фильтрация по ролям
+        if ($this->isSurveyor()) {
+            // Замерщик видит только свои заказы или без назначенного замерщика
+            $query->where(function($q) {
+                $q->where('surveyor_id', $this->getCurrentUser()->id)
+                  ->orWhereNull('surveyor_id');
+            });
+        } elseif ($this->isConstructor()) {
+            // Конструктор видит заказы в работе
+            $query->whereIn('status', ['in_progress', 'completed']);
+        } elseif ($this->isInstaller()) {
+            // Установщик видит заказы с готовой документацией
+            $query->whereHas('documentation', function($q) {
+                $q->whereNotNull('completed_at');
+            });
+        } elseif ($this->isManager() && $filterId) {
+            // Менеджер может фильтровать по ID менеджера
+            $query->where('manager_id', $filterId);
+        }
+    }
+
+    /**
+     * Применить фильтры для замеров
+     */
+    private function applyMeasurementFilters($query, $filterId)
+    {
+        $user = $this->getCurrentUser();
+        
+        // Фильтрация по не удалённым заказам
+        $query->whereHas('order', function ($q) {
+            $q->whereNull('deleted_at');
+        });
+        
+        // Фильтрация по ролям для замеров
+        if ($this->isSurveyor()) {
+            // Замерщик видит только свои замеры или незакрепленные
+            $query->where(function ($q) use ($user) {
+                $q->where('surveyor_id', $user->id)
+                  ->orWhereNull('surveyor_id');
+            });
+        } elseif ($this->isConstructor()) {
+            // Конструктор видит только свои замеры или незакрепленные
+            $query->where(function ($q) use ($user) {
+                $q->where('surveyor_id', $user->id)
+                  ->orWhereNull('surveyor_id');
+            });
+        } elseif ($this->isManager()) {
+            // Менеджер видит все замеры, может фильтровать по конкретному замерщику
+            if ($filterId) {
+                $query->where('surveyor_id', $filterId);
+            }
+        } else {
+            // Другие роли могут фильтровать
+            if ($filterId) {
+                $query->where('surveyor_id', $filterId);
+            }
+        }
+    }
+
+    /**
+     * Применить фильтры для договоров
+     */
+    private function applyContractFilters($query, $filterId)
+    {
+        $query->whereHas('order', function($q) use ($filterId) {
+            $q->whereNull('deleted_at');
+            if ($this->isManager() && $filterId) {
+                $q->where('manager_id', $filterId);
+            }
+        });
+    }
+
+    /**
+     * Применить фильтры для документации
+     */
+    private function applyDocumentationFilters($query, $filterId)
+    {
+        $user = $this->getCurrentUser();
+        
+        $query->whereHas('order', function($q) {
+            $q->whereNull('deleted_at');
+        });
+
+        // Фильтрация по ролям
+        if ($this->isManager()) {
+            // Менеджер видит всю документацию, может фильтровать по конкретному сотруднику
+            if ($filterId) {
+                $query->whereHas('order', function ($q) use ($filterId) {
+                    $q->where(function ($subQ) use ($filterId) {
+                        $subQ->where('manager_id', $filterId)
+                             ->orWhere('surveyor_id', $filterId)
+                             ->orWhere('constructor_id', $filterId)
+                             ->orWhere('installer_id', $filterId);
+                    });
+                })->orWhere('constructor_id', $filterId);
+            }
+        } elseif ($this->isSurveyor()) {
+            // Замерщик видит только документацию по своим заказам
+            $query->whereHas('order', function ($q) use ($user) {
+                $q->where('surveyor_id', $user->id);
+            });
+        } elseif ($this->isConstructor()) {
+            // Конструктор видит документацию, где он назначен конструктором
+            $query->where('constructor_id', $user->id);
+        } elseif ($this->isInstaller()) {
+            // Установщик видит документацию по заказам, где он назначен установщиком
+            $query->whereHas('order', function ($q) use ($user) {
+                $q->where('installer_id', $user->id);
+            });
+        }
+    }
+
+    /**
+     * Применить фильтры для производства
+     */
+    private function applyProductionFilters($query, $filterId)
+    {
+        $user = $this->getCurrentUser();
+        
+        $query->whereHas('order', function($q) {
+            $q->whereNull('deleted_at');
+        });
+
+        // Фильтрация по ролям
+        if ($this->isManager()) {
+            // Менеджер видит всё производство, может фильтровать по конкретному сотруднику
+            if ($filterId) {
+                $query->whereHas('order', function ($q) use ($filterId) {
+                    $q->where(function ($subQ) use ($filterId) {
+                        $subQ->where('manager_id', $filterId)
+                             ->orWhere('surveyor_id', $filterId)
+                             ->orWhere('constructor_id', $filterId)
+                             ->orWhere('installer_id', $filterId);
+                    });
+                });
+            }
+        } elseif ($this->isSurveyor()) {
+            // Замерщик видит только производство по своим заказам
+            $query->whereHas('order', function ($q) use ($user) {
+                $q->where('surveyor_id', $user->id);
+            });
+        } elseif ($this->isConstructor()) {
+            // Конструктор видит производство по заказам, где он назначен конструктором
+            $query->whereHas('order', function ($q) use ($user) {
+                $q->where('constructor_id', $user->id);
+            });
+        } elseif ($this->isInstaller()) {
+            // Установщик видит производство по заказам, где он назначен установщиком
+            $query->whereHas('order', function ($q) use ($user) {
+                $q->where('installer_id', $user->id);
+            });
+        }
+    }
+
+    /**
+     * Применить фильтры для установок
+     */
+    private function applyInstallationFilters($query, $filterId)
+    {
+        $user = $this->getCurrentUser();
+        
+        $query->whereHas('order', function($q) {
+            $q->whereNull('deleted_at');
+        });
+
+        // Фильтрация по ролям
+        if ($this->isManager()) {
+            // Менеджер видит все установки, может фильтровать по конкретному сотруднику
+            if ($filterId) {
+                $query->whereHas('order', function ($q) use ($filterId) {
+                    $q->where(function ($subQ) use ($filterId) {
+                        $subQ->where('manager_id', $filterId)
+                             ->orWhere('surveyor_id', $filterId)
+                             ->orWhere('constructor_id', $filterId)
+                             ->orWhere('installer_id', $filterId);
+                    });
+                });
+            }
+        } elseif ($this->isSurveyor()) {
+            // Замерщик видит только установки по своим заказам
+            $query->whereHas('order', function ($q) use ($user) {
+                $q->where('surveyor_id', $user->id);
+            });
+        } elseif ($this->isConstructor()) {
+            // Конструктор видит установки по заказам, где он назначен конструктором
+            $query->whereHas('order', function ($q) use ($user) {
+                $q->where('constructor_id', $user->id);
+            });
+        } elseif ($this->isInstaller()) {
+            // Установщик видит установки, где он назначен установщиком
+            $query->whereHas('order', function ($q) use ($user) {
+                $q->where('installer_id', $user->id);
+            });
+        }
+    }
+
+    /**
+     * Получить цвет для заказа
+     */
+    private function getOrderColor($order)
+    {
+        $isActiveOrDone = in_array($order->status, ['in_progress', 'completed']);
+        
+        if ($isActiveOrDone) {
+            return '#4caf50'; // зелёный – выполнено или в работе
+        }
+
+        $deadline = $order->meeting_at ? Carbon::parse($order->meeting_at) : null;
+        return $this->getColorByDeadline($deadline);
+    }
+
+    /**
+     * Получить цвет для замера
+     */
+    private function getMeasurementColor($measurement)
+    {
+        $isCompleted = $measurement->isCompleted();
+        
+        if ($isCompleted) {
+            return '#4caf50'; // зелёный – выполнено
+        }
+
+        $deadline = $measurement->measured_at ? Carbon::parse($measurement->measured_at) : null;
+        return $this->getColorByDeadline($deadline);
+    }
+
+    /**
+     * Получить цвет для договора
+     */
+    private function getContractColor($contract)
+    {
+        if ($contract->signed_at) {
+            return '#4caf50'; // зелёный – подписан
+        }
+
+        $deadline = $contract->documentation_due_at ? Carbon::parse($contract->documentation_due_at) : null;
+        return $this->getColorByDeadline($deadline);
+    }
+
+    /**
+     * Получить цвет для документации
+     */
+    private function getDocumentationColor($documentation)
+    {
+        if ($documentation->completed_at) {
+            return '#4caf50'; // зелёный – завершена
+        }
+
+        $deadline = optional($documentation->order->contract)->documentation_due_at;
+        $deadline = $deadline ? Carbon::parse($deadline) : null;
+        return $this->getColorByDeadline($deadline);
+    }
+
+    /**
+     * Получить цвет для производства
+     */
+    private function getProductionColor($production)
+    {
+        if ($production->completed_at) {
+            return '#4caf50'; // зелёный – завершено
+        }
+
+        $deadline = optional($production->order->contract)->ready_date;
+        $deadline = $deadline ? Carbon::parse($deadline) : null;
+        return $this->getColorByDeadline($deadline);
+    }
+
+    /**
+     * Получить цвет для установки
+     */
+    private function getInstallationColor($installation)
+    {
+        if ($installation->installed_at) {
+            return '#4caf50'; // зелёный – установлена
+        }
+
+        $deadline = optional($installation->order->contract)->installation_date;
+        $deadline = $deadline ? Carbon::parse($deadline) : null;
+        return $this->getColorByDeadline($deadline);
+    }
+
+    /**
+     * Получить цвет по дедлайну
+     */
+    private function getColorByDeadline(?Carbon $deadline)
+    {
+        if (is_null($deadline)) {
+            return '#2196f3'; // синий – нет дедлайна
+        }
+        
+        $today = Carbon::today();
+        if ($deadline->lt($today)) {
+            return '#e53935'; // красный – просрочено
+        }
+        if ($deadline->lte($today->copy()->addDays(3))) {
+            return '#ffb300'; // жёлтый – крайний срок сегодня/завтра
+        }
+        return '#2196f3'; // синий – всё ещё в срок
+    }
+
+    /**
+     * Получить список сотрудников для фильтрации
+     */
+    public function getEmployees(Request $request)
+    {
+        if (!$this->canViewCalendar()) {
+            return response()->json(['error' => 'Access denied'], 403);
+        }
+
+        $type = $request->query('type', 'all');
+        $currentUser = $this->getCurrentUser();
+
+        $employees = collect();
+
+        switch ($type) {
+            case 'managers':
+                $employees = User::where('role', 'manager')->get();
+                break;
+            
+            case 'surveyors':
+                $employees = User::where('role', 'surveyor')->get();
+                break;
+                
+            case 'constructors':
+                $employees = User::where('role', 'constructor')->get();
+                break;
+                
+            case 'installers':
+                $employees = User::where('role', 'installer')->get();
+                break;
+                
+            default:
+                // Все сотрудники, доступные для текущего пользователя
+                if ($this->isManager()) {
+                    $employees = User::all();
+                } else {
+                    $employees = User::where('role', $currentUser->role)->get();
+                }
+                break;
+        }
+
+        return response()->json($employees->map(function ($employee) {
+            return [
+                'id' => $employee->id,
+                'name' => $employee->name,
+                'role' => $employee->role,
+                'role_display' => $this->getRoleDisplay($employee->role),
+            ];
+        }));
+    }
+
+    /**
+     * Получить отображаемое название роли
+     */
+    private function getRoleDisplay($role)
+    {
+        $roles = [
+            'manager' => 'Менеджер',
+            'surveyor' => 'Замерщик',
+            'constructor' => 'Конструктор',
+            'installer' => 'Монтажник',
+        ];
+
+        return $roles[$role] ?? $role;
     }
 }

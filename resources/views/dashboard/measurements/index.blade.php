@@ -34,14 +34,11 @@
                 @endif
             </h3>
             <div class="btn-group">
-                <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#calendarModal">
-                    <i class="fe fe-calendar"></i> Календарь
-                    @if(request('currentUserMeasurements'))
-                        @if($selectedEmployee)
-                            <small>({{ $selectedEmployee->name }})</small>
-                        @endif
-                    @endif
-                </button>
+                @include('dashboard.partials.universal-calendar', [
+                    'calendarType' => 'measurement',
+                    'filterParam' => 'currentUserMeasurements',
+                    'employees' => $employees ?? collect()
+                ])
                 <a href="{{ route('employee.measurements.index') }}" class="btn btn-sm btn-outline-primary">
                     <i class="fe fe-rotate-ccw"></i> 
                     @if(request('currentUserMeasurements'))
@@ -315,92 +312,7 @@
         </div>
     </div>
 
-    {{-- Календарь --}}
-    <div class="modal fade" id="calendarModal" tabindex="-1">
-        <div class="modal-dialog modal-fullscreen" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Календарь замеров</h5>
-                    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Закрыть"></button>
-                </div>
-                <div class="modal-body p-0" id="calendarContent">
-                    <div id="calendar" data-type="measurement"></div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            let calendar;
-
-            $('#calendarModal').on('shown.bs.modal', function () {
-                $('#calendarContent').html('<div id="calendar" data-type="measurement"></div>');
-                const calendarEl = document.getElementById('calendar');
-                if (!calendarEl) return;
-                const type = calendarEl.dataset.type;
-
-                // Получаем параметр currentUserMeasurements из URL
-                const urlParams = new URLSearchParams(window.location.search);
-                const currentUserMeasurements = urlParams.get('currentUserMeasurements');
-
-                // Обновляем заголовок календаря с информацией о фильтре
-                const modalTitle = $('#calendarModal .modal-title');
-                let calendarTitle = 'Календарь замеров';
-                
-                // Получаем имя выбранного сотрудника из соответствующей ссылки в dropdown
-                if (currentUserMeasurements) {
-                    const activeDropdownItem = document.querySelector(`a.dropdown-item[href*="currentUserMeasurements=${currentUserMeasurements}"]`);
-                    if (activeDropdownItem) {
-                        // Извлекаем только текст, исключая иконки
-                        let employeeName = activeDropdownItem.textContent.trim();
-                        // Убираем символ галочки если есть
-                        employeeName = employeeName.replace(/\s*✓\s*$/, '').trim();
-                        calendarTitle += ' - ' + employeeName;
-                    }
-                }
-                modalTitle.text(calendarTitle);
-
-                if (calendar) {
-                    calendar.destroy();
-                }
-
-                // Формируем extraParams с учетом фильтрации
-                const extraParams = { type: type };
-                if (currentUserMeasurements) {
-                    extraParams.currentUserMeasurements = currentUserMeasurements;
-                }
-
-                calendar = new window.FullCalendar.Calendar(calendarEl, {
-                    plugins: [window.FullCalendar.dayGridPlugin],
-                    locale: window.FullCalendar.ruLocale,
-                    initialView: 'dayGridMonth',
-                    height: '100%',
-                    events: {
-                        url: '/employee/calendar/events',
-                        method: 'GET',
-                        extraParams: extraParams,
-                        failure: function () {
-                            alert('Ошибка загрузки событий!');
-                        },
-                    },
-                    headerToolbar: {
-                        left: 'prev,next today',
-                        center: 'title',
-                        right: 'dayGridMonth'
-                    }
-                });
-                calendar.render();
-            });
-
-            $('#calendarModal').on('hidden.bs.modal', function () {
-                if (calendar) {
-                    calendar.destroy();
-                    calendar = null;
-                }
-            });
-        });
-    </script>
 @endsection
 
 <style>

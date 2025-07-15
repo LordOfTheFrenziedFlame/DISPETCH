@@ -7,7 +7,7 @@ use App\Models\Measurement;
 use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
 use App\Components\SaveMedia;
-use App\Components\CalendarService;
+
 use App\Models\Attachment;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
@@ -17,7 +17,7 @@ class MeasurementController extends Controller
 {
     use HasRolePermissions;
 
-    public function index(Request $request, CalendarService $calendarService)
+    public function index(Request $request)
     {
         $user = Auth::guard('employees')->user();
         $surveyors = User::where('role', 'surveyor')->get();
@@ -57,19 +57,7 @@ class MeasurementController extends Controller
 
         $measurements = $measurementsQuery->with(['order.manager', 'surveyor'])->latest()->get();
 
-        // Календарные данные
-        $month = now()->month;
-        $year = now()->year;
-        $startOfMonth = now()->startOfMonth()->startOfWeek(\Carbon\Carbon::MONDAY);
-        $endOfMonth = now()->endOfMonth()->endOfWeek(\Carbon\Carbon::SUNDAY);
 
-        $records = Measurement::whereNotNull('measured_at')
-            ->whereHas('order', function ($query) {
-                $query->whereNull('deleted_at');
-            })
-            ->whereBetween('measured_at', [$startOfMonth, $endOfMonth])
-            ->get();
-        $grouped = $calendarService->groupByDate($records, 'measured_at');
 
         // Получаем все вложения для замеров текущего surveyor через morphTo
         $attachments = \App\Models\Attachment::whereHasMorph(
@@ -85,9 +73,6 @@ class MeasurementController extends Controller
 
         return view('dashboard.measurements.index', [
             'measurements' => $measurements,
-            'grouped' => $grouped,
-            'month' => $month,
-            'year' => $year,
             'model' => \App\Models\Measurement::class,
             'dateField' => 'measured_at',
             'surveyors' => $surveyors,

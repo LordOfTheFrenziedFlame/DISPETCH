@@ -19,9 +19,10 @@ class ProductionController extends Controller
             })
             ->get();
         $employees = \App\Models\User::where('role', 'manager')->get(['id', 'name', 'role']);
+        $managers = \App\Models\User::where('role', 'manager')->get(['id', 'name']);
         $selectedEmployee = $request->get('manager_id') ? \App\Models\User::find($request->get('manager_id')) : null;
         
-        return view('dashboard.productions.index', compact('productions', 'employees', 'selectedEmployee'));
+        return view('dashboard.productions.index', compact('productions', 'employees', 'managers', 'selectedEmployee'));
     }
 
     public function complete(Production $production, Request $request)

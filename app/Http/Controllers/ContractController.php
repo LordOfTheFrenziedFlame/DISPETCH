@@ -32,11 +32,12 @@ class ContractController extends Controller
         )->get();
 
         $employees = \App\Models\User::all(['id', 'name', 'role']);
+        $managers = \App\Models\User::where('role', 'manager')->get(['id', 'name']);
         $constructorsList = \App\Models\User::all(['id','name']);
         $installersList = \App\Models\User::all(['id','name']);
         $selectedEmployee = request('manager_id') ? \App\Models\User::find(request('manager_id')) : null;
 
-        return view('dashboard.contract.index', compact('contracts', 'attachments', 'employees', 'selectedEmployee', 'constructorsList', 'installersList'));
+        return view('dashboard.contract.index', compact('contracts', 'attachments', 'employees', 'managers', 'selectedEmployee', 'constructorsList', 'installersList'));
     }
 
     public function create()

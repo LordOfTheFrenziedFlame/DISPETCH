@@ -69,6 +69,7 @@ class InstallationController extends Controller
 
         $installations = $query->latest()->get();
         $employees = \App\Models\User::all(['id', 'name', 'role']);
+        $managers = \App\Models\User::where('role', 'manager')->get(['id', 'name']);
         $selectedEmployee = $request->get('manager_id') ? \App\Models\User::find($request->get('manager_id')) : null;
         
         // Данные для модалки редактирования (чтобы не делать запросы во вью)
@@ -78,7 +79,7 @@ class InstallationController extends Controller
             ->whereHas('order')
             ->get();
         
-        return view('dashboard.installations.index', compact('installations', 'employees', 'selectedEmployee', 'orders', 'installers', 'documentations'));
+        return view('dashboard.installations.index', compact('installations', 'employees', 'managers', 'selectedEmployee', 'orders', 'installers', 'documentations'));
     }
 
     public function create()

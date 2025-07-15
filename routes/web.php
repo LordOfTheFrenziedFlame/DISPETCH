@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\LoginController;
-use App\Http\Controllers\CalendarController;
+
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\MeasurementController;
 use App\Http\Controllers\CalendarApiController;
@@ -27,7 +27,10 @@ Route::get('/logout', [LoginController::class, 'logout'])->middleware('auth:empl
 
 
 Route::prefix('employee')->middleware('auth:employees')->group(function () {
+    // Календарь API
     Route::get('/calendar/events', [CalendarApiController::class, 'index']);
+    Route::get('/calendar/employees', [CalendarApiController::class, 'getEmployees']);
+    
     Route::prefix('orders')->name('employee.orders.')->group(function () {
         
         Route::get('/', [OrderController::class, 'index'])->name('index');

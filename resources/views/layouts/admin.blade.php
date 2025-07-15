@@ -172,6 +172,7 @@
 <script src="{{ asset('vendor/js_for_dashboard/jquery.min.js') }}"></script>
 <script src="{{ asset('vendor/js_for_dashboard/popper.js') }}"></script>
 <script src="{{ asset('vendor/js_for_dashboard/bootstrap.min.js') }}"></script>
+<script src="{{ asset('vendor/calendar/fullcalendar.global.min.js') }}"></script>
 
 <script>
     // Инициализация Feather Icons и Bootstrap dropdown

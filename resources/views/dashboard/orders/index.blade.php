@@ -46,12 +46,11 @@
                         Обновить
                     @endif
                 </a>
-                <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#calendarModal">
-                    <i class="fe fe-calendar"></i> Календарь
-                    @if(request('manager_id') && isset($selectedManager) && $selectedManager)
-                        <small>({{ $selectedManager->name }})</small>
-                    @endif
-                </button>
+                @include('dashboard.partials.universal-calendar', [
+                    'calendarType' => 'order',
+                    'filterParam' => 'manager_id',
+                    'employees' => $managers ?? collect()
+                ])
                 <div class="dropdown">
                     <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" id="sortManagerDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i class="fe fe-user"></i> Фильтр по менеджерам
@@ -263,92 +262,7 @@
         </div>
     </div>
 
-{{-- Календарь заказов --}}
-<div class="modal fade" id="calendarModal" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Календарь заказов</h5>
-                <button type="button" class="btn-close" data-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
-            <div class="modal-body p-0" id="calendarContent">
-                <div id="calendar" data-type="order"></div>
-            </div>
-        </div>
-    </div>
-</div>
 
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        let calendar;
-
-        $('#calendarModal').on('shown.bs.modal', function () {
-            const calendarEl = document.getElementById('calendar');
-            if (!calendarEl) return;
-            const type = calendarEl.dataset.type;
-
-            // Получаем параметр manager_id из URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const managerId = urlParams.get('manager_id');
-
-            // Обновляем заголовок календаря с информацией о фильтре
-            const modalTitle = $('#calendarModal .modal-title');
-            let calendarTitle = 'Календарь заказов';
-            
-            // Получаем имя выбранного менеджера из соответствующей ссылки в dropdown
-            if (managerId) {
-                const activeDropdownItem = document.querySelector(`a.dropdown-item[href*="manager_id=${managerId}"]`);
-                if (activeDropdownItem) {
-                    // Извлекаем только текст, исключая иконки
-                    let managerName = activeDropdownItem.textContent.trim();
-                    // Убираем символ галочки если есть
-                    managerName = managerName.replace(/\s*✓\s*$/, '').trim();
-                    calendarTitle += ' - ' + managerName;
-                }
-            }
-            modalTitle.text(calendarTitle);
-
-            if (calendar) {
-                calendar.destroy();
-            }
-
-            // Формируем extraParams с учетом фильтрации
-            const extraParams = { type: type };
-            if (managerId) {
-                extraParams.manager_id = managerId;
-            }
-
-            calendar = new window.FullCalendar.Calendar(calendarEl, {
-                plugins: [window.FullCalendar.dayGridPlugin],
-                locale: window.FullCalendar.ruLocale,
-                initialView: 'dayGridMonth',
-                height: '100%',
-                events: {
-                    url: '/employee/calendar/events',
-                    method: 'GET',
-                    extraParams: extraParams,
-                    failure: function () {
-                        alert('Ошибка загрузки событий!');
-                    },
-                },
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth'
-                }
-            });
-            calendar.render();
-        });
-
-        $('#calendarModal').on('hidden.bs.modal', function () {
-            if (calendar) {
-                calendar.destroy();
-                calendar = null;
-            }
-        });
-    });
-</script>
 
 <!-- Модальное окно для создания заказа -->
 <div class="modal fade" id="createOrderModal" tabindex="-1" role="dialog" aria-labelledby="createOrderModalLabel" aria-hidden="true">

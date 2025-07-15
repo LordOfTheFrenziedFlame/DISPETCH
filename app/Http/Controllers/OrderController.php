@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use Illuminate\Http\Request;
-use App\Components\CalendarService;
+
 use Illuminate\Support\Facades\Auth;
 use App\Traits\HasRolePermissions;
 
@@ -29,7 +29,7 @@ class OrderController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request, CalendarService $calendarService)
+    public function index(Request $request)
     {
         if (!$this->canViewOrders()) {
             return redirect()->back()->with('error', 'У вас нет доступа к заказам');
@@ -37,6 +37,7 @@ class OrderController extends Controller
 
         $month = $request->query('month', now()->month);
         $year = $request->query('year', now()->year);
+        $managerId = $request->query('manager_id');
 
         // Фильтрация заказов в зависимости от роли
         $ordersQuery = Order::with(['measurement', 'contract', 'documentation', 'installation', 'manager', 'surveyor', 'constructor', 'installer']);
@@ -55,18 +56,28 @@ class OrderController extends Controller
             $ordersQuery->whereHas('documentation', function($query) {
                 $query->whereNotNull('completed_at');
             });
+        } elseif ($this->isManager() && $managerId) {
+            // Менеджер может фильтровать по конкретному менеджеру
+            $ordersQuery->where('manager_id', $managerId);
         }
 
         $orders = $ordersQuery->latest()->get();
-        $grouped = $calendarService->groupByDate($orders, 'meeting_at');
+
+        // Получаем данные для фильтрации
+        $managers = \App\Models\User::where('role', 'manager')->get(['id', 'name']);
+        $selectedManager = null;
+        if ($managerId) {
+            $selectedManager = $managers->firstWhere('id', $managerId);
+        }
 
         return view('dashboard.orders.index', array_merge([
             'orders' => $orders,
-            'grouped' => $grouped,
             'month' => $month,
             'year' => $year,
             'model' => Order::class,
             'dateField' => 'meeting_at',
+            'managers' => $managers,
+            'selectedManager' => $selectedManager,
         ], $this->getCreateOrderData()));
     }
 
@@ -177,6 +188,7 @@ class OrderController extends Controller
             'surveyor_id' => 'nullable|exists:users,id',
             'constructor_id' => 'nullable|exists:users,id',
             'installer_id' => 'nullable|exists:users,id',
+            'manager_id' => 'nullable|exists:users,id',
             'status' => 'required|in:pending,in_progress,completed',
             'product_name' => 'nullable|string|max:255',
             'total_amount' => 'nullable|numeric|min:0',

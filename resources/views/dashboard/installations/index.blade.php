@@ -34,14 +34,11 @@
             @endif
         </h3>
         <div class="btn-group">
-            <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#calendarModal">
-                <i class="fe fe-calendar"></i> Календарь
-                @if(request('manager_id'))
-                    @if($selectedEmployee)
-                        <small>({{ $selectedEmployee->name }})</small>
-                    @endif
-                @endif
-            </button>
+            @include('dashboard.partials.universal-calendar', [
+                'calendarType' => 'installation',
+                'filterParam' => 'manager_id',
+                'employees' => $managers ?? collect()
+            ])
             <a href="{{ route('employee.installations.index') }}" class="btn btn-sm btn-outline-primary">
                 <i class="fe fe-rotate-ccw"></i> 
                 @if(request('manager_id'))
@@ -305,92 +302,7 @@
     </div>
 </div>
 
-{{-- Календарь --}}
-<div class="modal fade" id="calendarModal" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Календарь установок</h5>
-                <button type="button" class="btn-close" data-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
-            <div class="modal-body p-0" id="calendarContent">
-                <div id="calendar" data-type="installation"></div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        let calendar;
-
-        $('#calendarModal').on('shown.bs.modal', function () {
-            $('#calendarContent').html('<div id="calendar" data-type="installation"></div>');
-            const calendarEl = document.getElementById('calendar');
-            if (!calendarEl) return;
-            const type = calendarEl.dataset.type;
-
-            // Получаем параметр manager_id из URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const managerId = urlParams.get('manager_id');
-
-            // Обновляем заголовок календаря с информацией о фильтре
-            const modalTitle = $('#calendarModal .modal-title');
-            let calendarTitle = 'Календарь установок';
-            
-            // Получаем имя выбранного сотрудника из соответствующей ссылки в dropdown
-            if (managerId) {
-                const activeDropdownItem = document.querySelector(`a.dropdown-item[href*="manager_id=${managerId}"]`);
-                if (activeDropdownItem) {
-                    // Извлекаем только текст, исключая иконки
-                    let employeeName = activeDropdownItem.textContent.trim();
-                    // Убираем символ галочки если есть
-                    employeeName = employeeName.replace(/\s*✓\s*$/, '').trim();
-                    calendarTitle += ' - ' + employeeName;
-                }
-            }
-            modalTitle.text(calendarTitle);
-
-            if (calendar) {
-                calendar.destroy();
-            }
-
-            // Формируем extraParams с учетом фильтрации
-            const extraParams = { type: type };
-            if (managerId) {
-                extraParams.manager_id = managerId;
-            }
-
-            calendar = new window.FullCalendar.Calendar(calendarEl, {
-                plugins: [window.FullCalendar.dayGridPlugin],
-                locale: window.FullCalendar.ruLocale,
-                initialView: 'dayGridMonth',
-                height: '100%',
-                events: {
-                    url: '/employee/calendar/events',
-                    method: 'GET',
-                    extraParams: extraParams,
-                    failure: function () {
-                        alert('Ошибка загрузки событий!');
-                    },
-                },
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth'
-                }
-            });
-            calendar.render();
-        });
-
-        $('#calendarModal').on('hidden.bs.modal', function () {
-            if (calendar) {
-                calendar.destroy();
-                calendar = null;
-            }
-        });
-    });
-</script>
 @endsection
 
 <style>

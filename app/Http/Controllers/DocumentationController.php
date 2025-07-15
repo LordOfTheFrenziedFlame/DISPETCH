@@ -79,9 +79,10 @@ class DocumentationController extends Controller
 
         $documentations = $query->latest()->get();
         $employees = \App\Models\User::all(['id', 'name', 'role']);
+        $managers = \App\Models\User::where('role', 'manager')->get(['id', 'name']);
         $selectedEmployee = $request->get('manager_id') ? \App\Models\User::find($request->get('manager_id')) : null;
         
-        return view('dashboard.documentation.index', compact('documentations', 'employees', 'selectedEmployee'));
+        return view('dashboard.documentation.index', compact('documentations', 'employees', 'managers', 'selectedEmployee'));
     }
 
     public function create()
