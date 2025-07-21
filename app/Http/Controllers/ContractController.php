@@ -23,6 +23,7 @@ class ContractController extends Controller
         ->whereHas('order', function ($query) {
             $query->whereNull('deleted_at');
         })
+        ->with(\App\Models\Order::ORDER_ATTACHMENTS_RELATIONS)
         ->withoutTrashed()
         ->get();
 

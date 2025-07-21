@@ -11,6 +11,21 @@ class Order extends Model
 {
     use HasFactory, SoftDeletes;
 
+    // Константы для eager loading паттернов
+    const ATTACHMENTS_RELATIONS = [
+        'attachments',
+        'measurement.attachments',
+        'contract.attachments',
+        'documentation.attachments'
+    ];
+
+    const ORDER_ATTACHMENTS_RELATIONS = [
+        'order.attachments',
+        'order.measurement.attachments',
+        'order.contract.attachments',
+        'order.documentation.attachments'
+    ];
+
     protected $fillable = ['manager_id', 'customer_name', 'address', 'meeting_at', 'phone_number', 'email', 'order_number', 'status', 'surveyor_id', 'constructor_id', 'installer_id', 'notes', 'total_amount', 'additional_data', 'product_name'];
 
     protected $casts = [
@@ -60,15 +75,27 @@ class Order extends Model
 
     public function getAllAttachmentsAttribute() : SupportCollection {
         // ВНИМАНИЕ: Этот метод может вызывать N+1 проблемы!
-        // Убедитесь что используете eager loading: 
-        // Order::with(['attachments', 'measurement.attachments', 'contract.attachments', 'documentation.attachments', 'installation.attachments'])
+        // 
+        // ДЛЯ ОДИНОЧНЫХ ЗАПИСЕЙ используйте:
+        // $order = Order::withAllAttachments()->find($id);
+        // $attachments = $order->all_attachments;
+        //
+        // ДЛЯ СПИСКОВ ЗАПИСЕЙ используйте eager loading в контроллерах:
+        // Measurements: ->with(['order.attachments', 'order.measurement.attachments', 'order.contract.attachments', 'order.documentation.attachments'])
+        // Contracts: ->with(['order.attachments', 'order.measurement.attachments', 'order.contract.attachments', 'order.documentation.attachments'])  
+        // Documentation: ->with(['order.attachments', 'order.measurement.attachments', 'order.contract.attachments', 'order.documentation.attachments'])
+        // Installations: ->with(['order.attachments', 'order.measurement.attachments', 'order.contract.attachments', 'order.documentation.attachments'])
+        // Productions: ->with(['order.attachments', 'order.measurement.attachments', 'order.contract.attachments', 'order.documentation.attachments'])
+        //
+        // ИЛИ используйте новые scope методы:
+        // Order::withFullData()->get() - для полной загрузки
+        // Order::withAttachmentsOnly()->get() - только для attachments
         
         return collect()
             ->merge($this->attachments ?? [])
             ->merge($this->measurement?->attachments ?? [])
             ->merge($this->contract?->attachments ?? [])
-            ->merge($this->documentation?->attachments ?? [])
-            ->merge($this->installation?->attachments ?? []);
+            ->merge($this->documentation?->attachments ?? []);
     }
 
     /**
@@ -76,13 +103,33 @@ class Order extends Model
      */
     public static function withAllAttachments()
     {
-        return static::with([
-            'attachments',
-            'measurement.attachments',
-            'contract.attachments', 
-            'documentation.attachments',
-            'installation.attachments'
-        ]);
+        return static::with(static::ATTACHMENTS_RELATIONS);
+    }
+
+    /**
+     * Scope для безопасной загрузки всех связанных данных включая attachments
+     */
+    public function scopeWithFullData($query)
+    {
+        return $query->with(array_merge([
+            'manager',
+            'surveyor', 
+            'constructor',
+            'installer',
+            'measurement',
+            'contract',
+            'documentation',
+            'installation',
+            'production'
+        ], static::ATTACHMENTS_RELATIONS));
+    }
+
+    /**
+     * Scope для загрузки только attachments без других связей
+     */
+    public function scopeWithAttachmentsOnly($query)
+    {
+        return $query->with(static::ATTACHMENTS_RELATIONS);
     }
 
 

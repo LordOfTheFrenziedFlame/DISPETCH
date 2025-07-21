@@ -13,7 +13,10 @@ class ProductionController extends Controller
      */
     public function index(Request $request)
     {
-        $productions = Production::with(['order', 'order.installer'])
+        $productions = Production::with(array_merge([
+            'order', 
+            'order.installer'
+        ], \App\Models\Order::ORDER_ATTACHMENTS_RELATIONS))
             ->whereHas('order', function($q){
                 $q->whereNull('deleted_at');
             })

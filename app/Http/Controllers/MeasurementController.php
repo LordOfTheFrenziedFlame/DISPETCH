@@ -55,7 +55,10 @@ class MeasurementController extends Controller
             }
         }
 
-        $measurements = $measurementsQuery->with(['order.manager', 'surveyor'])->latest()->get();
+        $measurements = $measurementsQuery->with(array_merge([
+            'order.manager', 
+            'surveyor'
+        ], \App\Models\Order::ORDER_ATTACHMENTS_RELATIONS))->latest()->get();
 
 
 

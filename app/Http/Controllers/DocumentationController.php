@@ -39,7 +39,10 @@ class DocumentationController extends Controller
         $user = $this->getCurrentUser();
         
         // Базовый запрос с фильтрацией неудаленных заказов
-        $query = Documentation::with('order', 'constructor')
+        $query = Documentation::with(array_merge([
+            'order', 
+            'constructor'
+        ], \App\Models\Order::ORDER_ATTACHMENTS_RELATIONS))
             ->whereHas('order', function ($query) {
                 $query->whereNull('deleted_at');
             })

@@ -38,7 +38,11 @@ class InstallationController extends Controller
         $user = $this->getCurrentUser();
         
         // Базовый запрос с фильтрацией по неудаленным заказам (убираем фильтр по статусу)
-        $query = Installation::with(['order', 'installer', 'documentation'])
+        $query = Installation::with(array_merge([
+            'order', 
+            'installer', 
+            'documentation'
+        ], \App\Models\Order::ORDER_ATTACHMENTS_RELATIONS))
             ->whereHas('order', function ($query) {
                 $query->whereNull('deleted_at');
             });
