@@ -81,12 +81,14 @@
             <thead>
                 <tr>
                     <th>№</th>
+                    <th>№ ДОГОВОРА</th>
                     <th>Клиент</th>
                     <th>Адрес</th>
+                    <th>ВИД ТОВАРА</th>
                     <th>Дата создания</th>
-                    <th>Дата готовности документации</th>
-                    <th>Дата производства</th>
-                    <th>Дата установки</th>
+                    <th>Документация</th>
+                    <th>Производство</th>
+                    <th>Установка</th>
                     <th>Действия</th>
                 </tr>
             </thead>
@@ -96,6 +98,11 @@
                         <td>
                             <a href="#" data-toggle="modal" data-target="#showModal{{ $contract->id }}">
                                 {{ $contract->id }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="#" data-toggle="modal" data-target="#showModal{{ $contract->id }}">
+                                {{ $contract->contract_number ?: '—' }}
                             </a>
                         </td>
                         <td>
@@ -110,7 +117,12 @@
                         </td>
                         <td>
                             <a href="#" data-toggle="modal" data-target="#showModal{{ $contract->id }}">
-                                {{ $contract->created_at ? \Carbon\Carbon::parse($contract->created_at)->format('d.m.Y H:i') : '—' }}
+                                {{ $contract->product_type ?: '—' }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="#" data-toggle="modal" data-target="#showModal{{ $contract->id }}">
+                                {{ $contract->created_at ? \Carbon\Carbon::parse($contract->created_at)->format('d.m.Y') : '—' }}
                             </a>
                         </td>
                         <td>
@@ -169,7 +181,7 @@
                                         </div>
                                         <div class="col-md-6">
                                             <h6>Дата создания</h6>
-                                            <p>{{ $contract->created_at ? $contract->created_at->format('d.m.Y H:i') : '—' }}</p>
+                                            <p>{{ $contract->created_at ? $contract->created_at->format('d.m.Y') : '—' }}</p>
                                         </div>
                                         <div class="col-md-6">
                                             <h6>Сумма договора</h6>

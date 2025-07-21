@@ -84,6 +84,7 @@
                     <th>Клиент</th>
                     <th>Договор</th>
                     <th>Адрес</th>
+                    <th>Телефон</th>
                     <th>Плановая дата</th>
                     <th>Дата установки</th>
                     <th>Заметки</th>
@@ -115,30 +116,30 @@
                         </td>
                         <td>
                             <a href="#" data-toggle="modal" data-target="#showModal{{ $installation->id }}">
+                                {{ $installation->order->phone_number ?? '—' }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="#" data-toggle="modal" data-target="#showModal{{ $installation->id }}">
                                 {{ optional(optional($installation->order)->contract)->installation_date ? \Carbon\Carbon::parse(optional(optional($installation->order)->contract)->installation_date)->format('d.m.Y') : '—' }}
                             </a>
                         </td>
                         <td>
                             <a href="#" data-toggle="modal" data-target="#showModal{{ $installation->id }}">
-                                {{ $installation->installed_at ? $installation->installed_at->format('d.m.Y H:i') : '—' }}
+                                {{ $installation->installed_at ? $installation->installed_at->format('d.m.Y') : '—' }}
                             </a>
                         </td>
                         <td>
                             {{ \Illuminate\Support\Str::limit($installation->result_notes ?? '—', 50) }}
                         </td>
                         <td>
-                            <div class="d-flex gap-2">
                             @if($installation->installed_at)
-                                    <span class="btn btn-outline-success w-100 my-3">Выполнен</span>
+                                <span class="btn btn-outline-success w-100 my-3">Выполнено</span>
                             @else
-                                    <span class="btn btn-outline-warning w-100 my-3">В процессе</span>
-                                    <button type="button" class="btn btn-outline-success btn-sm p-1 m-0 w-100 my-3"
-                                            style="min-width:70px;"
-                                            data-toggle="modal" data-target="#confirmModal{{ $installation->id }}">
-                                        <i class="badge fe-check w-100"></i> Подтвердить
-                                    </button>
+                                <button type="button" class="btn btn-outline-warning w-100 my-3" data-toggle="modal" data-target="#confirmModal{{ $installation->id }}">
+                                    <i class="fe fe-check"></i> Подтвердить
+                                </button>
                             @endif
-                            </div>
                         </td>
                     </tr>
 
@@ -157,7 +158,7 @@
                                     <p><strong>Адрес:</strong> {{ $installation->order->address }}</p>
                                     <p><strong>Установщик:</strong> {{ $installation->installer ? $installation->installer->name : 'Не назначен' }}</p>
                                     <p><strong>Плановая дата установки (по договору):</strong> {{ optional(optional($installation->order)->contract)->installation_date ? \Carbon\Carbon::parse(optional(optional($installation->order)->contract)->installation_date)->format('d.m.Y') : '—' }}</p>
-                                    <p><strong>Дата установки:</strong> {{ $installation->installed_at ? $installation->installed_at->format('d.m.Y H:i') : '—' }}</p>
+                                    <p><strong>Дата установки:</strong> {{ $installation->installed_at ? $installation->installed_at->format('d.m.Y') : '—' }}</p>
                                     <p><strong>Статус:</strong> 
                                         @if($installation->installed_at)
                                             <span class="badge badge-success">Завершена</span>

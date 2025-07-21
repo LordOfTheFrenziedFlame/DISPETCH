@@ -83,10 +83,9 @@
             <thead>
                 <tr>
                     <th>№</th>
-                    <th>№ Заказа</th>
-                    <th>№ Договора</th>
                     <th>Клиент</th>
-                    <th>Адрес</th>
+                    <th>№ Договора</th>
+                    <th>Вид товара</th>
                     <th>Дата готовности</th>
                     <th>Дата установки</th>
                     <th>Заметки</th>
@@ -100,16 +99,13 @@
                             <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ $production->id }}</a>
                         </td>
                         <td>
-                             <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ optional($production->order)->order_number ?: '—' }}</a>
+                            <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ optional($production->order)->customer_name ?: '—' }}</a>
                         </td>
                         <td>
                             <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ optional(optional($production->order)->contract)->contract_number ?? '—' }}</a>
                         </td>
                         <td>
-                            <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ optional($production->order)->customer_name ?: '—' }}</a>
-                        </td>
-                        <td>
-                            <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ optional($production->order)->address ?: '—' }}</a>
+                            <a href="#" data-toggle="modal" data-target="#showProductionModal{{ $production->id }}">{{ optional(optional($production->order)->contract)->product_type ?? '—' }}</a>
                         </td>
                         <td>
                             {{ optional(optional($production->order)->contract)->ready_date ? \Carbon\Carbon::parse(optional(optional($production->order)->contract)->ready_date)->format('d.m.Y') : '—' }}
@@ -124,7 +120,7 @@
                             @if($production->completed_at)
                                 <span class="btn btn-outline-success w-100 my-3">Выполнен</span>
                             @else
-                                <button type="button" class="btn btn-sm btn-outline-success w-100 my-3" data-toggle="modal" data-target="#completeProductionModal{{ $production->id }}"
+                                <button type="button" class="btn btn-sm btn-outline-warning w-100 my-3" data-toggle="modal" data-target="#completeProductionModal{{ $production->id }}"
                                     {{ !optional($production->order)->installer_id ? 'disabled title="Сначала назначьте установщика в заказе"' : '' }}>
                                     <i class="fe fe-check"></i> Завершить
                                 </button>

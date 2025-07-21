@@ -81,12 +81,12 @@
                 <thead>
                     <tr>
                         <th>№</th>
-                        <th>№ Заказа</th>
+                        <th>Продукт</th>
                         <th>Клиент</th>
                         <th>Телефон</th>
                         <th>Адрес</th>
+                        <th>Продукт</th>
                         <th>Замерщик</th>
-                        <th>Дата встречи</th>
                         <th>Дата замера</th>
                         <th>Комментарий</th>
                         <th>Действия</th>
@@ -102,7 +102,7 @@
                             </td>
                             <td>
                                 <a href="#" data-toggle="modal" data-target="#showModal{{ $measurement->id }}">
-                                    {{ optional($measurement->order)->order_number ?? '—' }}
+                                    {{ optional($measurement->order)->product_name ?? '—' }}
                                 </a>
                             </td>
                             <td>
@@ -122,17 +122,17 @@
                             </td>
                             <td>
                                 <a href="#" data-toggle="modal" data-target="#showModal{{ $measurement->id }}">
+                                    {{ optional($measurement->order)->product_name ?? '—' }}
+                                </a>
+                            </td>
+                            <td>
+                                <a href="#" data-toggle="modal" data-target="#showModal{{ $measurement->id }}">
                                     {{ optional($measurement->surveyor)->name }}
                                 </a>
                             </td>
                             <td>
                                 <a href="#" data-toggle="modal" data-target="#showModal{{ $measurement->id }}">
-                                    {{ $measurement->initial_meeting_at ? \Carbon\Carbon::parse($measurement->initial_meeting_at)->format('d.m.Y H:i') : '—' }}
-                                </a>
-                            </td>
-                            <td>
-                                <a href="#" data-toggle="modal" data-target="#showModal{{ $measurement->id }}">
-                                    {{ $measurement->measured_at ? \Carbon\Carbon::parse($measurement->measured_at)->format('d.m.Y H:i') : '—' }}
+                                    {{ $measurement->measured_at ? \Carbon\Carbon::parse($measurement->measured_at)->format('d.m.Y') : '—' }}
                                 </a>
                             </td>
                             <td>
@@ -140,7 +140,7 @@
                             </td>
                             <td style="white-space: normal;">
                                 @if($measurement->isPending())
-                                    <button type="button" class="btn btn-outline-success my-3" data-toggle="modal" data-target="#completeModal{{ $measurement->id }}">
+                                    <button type="button" class="btn btn-outline-warning my-3" data-toggle="modal" data-target="#completeModal{{ $measurement->id }}">
                                         <i class="fe fe-check"></i> Отметить как сданный
                                     </button>
                                 @elseif($measurement->isCompleted())
@@ -171,8 +171,8 @@
                                             <div class="col-md-6">
                                                 <p><strong>Менеджер:</strong> {{ optional($measurement->order->manager)->name ?? '—' }}</p>
                                                 <p><strong>Замерщик:</strong> {{ optional($measurement->surveyor)->name ?? '—' }}</p>
-                                                <p><strong>Дата встречи (первичная):</strong> {{ $measurement->initial_meeting_at ? \Carbon\Carbon::parse($measurement->initial_meeting_at)->format('d.m.Y H:i') : '—' }}</p>
-                                        <p><strong>Дата замера:</strong> {{ $measurement->measured_at ? \Carbon\Carbon::parse($measurement->measured_at)->format('d.m.Y H:i') : '—' }}</p>
+                                                <p><strong>Дата встречи (первичная):</strong> {{ $measurement->initial_meeting_at ? \Carbon\Carbon::parse($measurement->initial_meeting_at)->format('d.m.Y') : '—' }}</p>
+                                        <p><strong>Дата замера:</strong> {{ $measurement->measured_at ? \Carbon\Carbon::parse($measurement->measured_at)->format('d.m.Y') : '—' }}</p>
                                                 <p><strong>Стоимость:</strong> {{ optional($measurement->order)->total_amount ? number_format($measurement->order->total_amount, 0, '.', ' ') . ' ₽' : '—' }}</p>
                                             </div>
                                         </div>

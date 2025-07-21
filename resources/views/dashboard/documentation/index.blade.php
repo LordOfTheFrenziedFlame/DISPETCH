@@ -81,9 +81,9 @@
             <thead>
                 <tr>
                     <th>№</th>
-                    <th>Договор</th>
                     <th>Клиент</th>
-                    <th>Адрес</th>
+                    <th>Договор</th>
+                    <th>Вид товара</th>
                     <th>Конструктор</th>
                     <th>Дата завершения</th>
                     <th>Действия</th>
@@ -99,17 +99,17 @@
                         </td>
                         <td>
                             <a href="#" data-toggle="modal" data-target="#showModal{{ $documentation->id }}">
-                                {{ optional($documentation->contract)->contract_number ?? '—' }}
-                            </a>
-                        </td>
-                        <td>
-                            <a href="#" data-toggle="modal" data-target="#showModal{{ $documentation->id }}">
                                 {{ optional($documentation->order)->customer_name }}
                             </a>
                         </td>
                         <td>
                             <a href="#" data-toggle="modal" data-target="#showModal{{ $documentation->id }}">
-                                {{ optional($documentation->order)->address }}
+                                {{ optional($documentation->contract)->contract_number ?? '—' }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="#" data-toggle="modal" data-target="#showModal{{ $documentation->id }}">
+                                {{ optional($documentation->contract)->product_type ?? '—' }}
                             </a>
                         </td>
                         <td>
