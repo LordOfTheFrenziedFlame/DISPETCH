@@ -49,27 +49,27 @@ class CalendarApiController extends Controller
             // Определяем дату события
             switch($eventType) {
                 case 'order':
-                    $date = $item->meeting_at;
+                    $date = $item->getCurrentStageDate();
                     $backgroundColor = $this->getOrderColor($item);
                     break;
                 case 'measurement':
-                    $date = $item->measured_at;
+                    $date = $item->order->getCurrentStageDate();
                     $backgroundColor = $this->getMeasurementColor($item);
                     break;
                 case 'contract':
-                    $date = $item->signed_at ?? $item->documentation_due_at;
+                    $date = $item->order->getCurrentStageDate();
                     $backgroundColor = $this->getContractColor($item);
                     break;
                 case 'documentation':
-                    $date = optional($item->order->contract)->documentation_due_at;
+                    $date = $item->order->getCurrentStageDate();
                     $backgroundColor = $this->getDocumentationColor($item);
                     break;
                 case 'production':
-                    $date = optional($item->order->contract)->ready_date;
+                    $date = $item->order->getCurrentStageDate();
                     $backgroundColor = $this->getProductionColor($item);
                     break;
                 case 'installation':
-                    $date = optional($item->order->contract)->installation_date;
+                    $date = $item->order->getCurrentStageDate();
                     $backgroundColor = $this->getInstallationColor($item);
                     break;
             }
@@ -100,7 +100,10 @@ class CalendarApiController extends Controller
             
             $this->applyOrderFilters($ordersQuery, $filterId);
 
-            $orderEvents = $ordersQuery->with(['manager', 'surveyor', 'constructor', 'installer', 'contract'])->get()->map(function ($item) use ($formatEvent) {
+            $orderEvents = $ordersQuery->with([
+                'manager', 'surveyor', 'constructor', 'installer',
+                'measurement', 'contract', 'documentation', 'production', 'installation'
+            ])->get()->map(function ($item) use ($formatEvent) {
                 $title = sprintf(
                     '#%s - %s - %s',
                     $item->id,
@@ -114,11 +117,17 @@ class CalendarApiController extends Controller
 
         // Замеры
         if (!$type || $type === 'measurement') {
-            $measurementsQuery = Measurement::whereNotNull('measured_at');
-
+            $measurementsQuery = Measurement::query();
             $this->applyMeasurementFilters($measurementsQuery, $filterId);
 
-            $measurementEvents = $measurementsQuery->with(['order.contract', 'surveyor'])->get()->map(function ($item) use ($formatEvent) {
+            $measurementEvents = $measurementsQuery->with([
+                'order.measurement',
+                'order.contract', 
+                'order.documentation',
+                'order.production',
+                'order.installation',
+                'surveyor'
+            ])->get()->map(function ($item) use ($formatEvent) {
                 $title = sprintf(
                     '#%d - %s - %s',
                     $item->id,
@@ -136,7 +145,13 @@ class CalendarApiController extends Controller
                 return response()->json(['error' => 'Access denied to contracts'], 403);
             }
 
-            $contractsQuery = \App\Models\Contract::with('order');
+            $contractsQuery = \App\Models\Contract::with([
+                'order.measurement',
+                'order.contract', 
+                'order.documentation',
+                'order.production',
+                'order.installation'
+            ]);
             $this->applyContractFilters($contractsQuery, $filterId);
 
             $contractEvents = $contractsQuery->get()->map(function ($contract) use ($formatEvent) {
@@ -153,7 +168,13 @@ class CalendarApiController extends Controller
 
         // Документации
         if (!$type || $type === 'documentation') {
-            $docsQuery = Documentation::with('order.contract');
+            $docsQuery = Documentation::with([
+                'order.measurement',
+                'order.contract',
+                'order.documentation',
+                'order.production',
+                'order.installation'
+            ]);
             $this->applyDocumentationFilters($docsQuery, $filterId);
 
             $documentationEvents = $docsQuery->get()->map(function ($d) use ($formatEvent) {
@@ -170,7 +191,13 @@ class CalendarApiController extends Controller
 
         // Производства
         if (!$type || $type === 'production') {
-            $prodQuery = Production::with('order.contract');
+            $prodQuery = Production::with([
+                'order.measurement',
+                'order.contract',
+                'order.documentation',
+                'order.production',
+                'order.installation'
+            ]);
             $this->applyProductionFilters($prodQuery, $filterId);
 
             $productionEvents = $prodQuery->get()->map(function ($p) use ($formatEvent) {
@@ -187,7 +214,13 @@ class CalendarApiController extends Controller
 
         // Установки
         if (!$type || $type === 'installation') {
-            $instQuery = Installation::with('order.contract');
+            $instQuery = Installation::with([
+                'order.measurement',
+                'order.contract',
+                'order.documentation',
+                'order.production',
+                'order.installation'
+            ]);
             $this->applyInstallationFilters($instQuery, $filterId);
 
             $installationEvents = $instQuery->get()->map(function ($i) use ($formatEvent) {
@@ -219,6 +252,14 @@ class CalendarApiController extends Controller
      */
     private function applyOrderFilters($query, $filterId)
     {
+        // Показываем незавершенные (через inStage) + завершенные заказы
+        $query->where(function($mainQuery) {
+            // Незавершенные заказы (строгая логика)
+            $mainQuery->inStage('order')
+            // ИЛИ завершенные заказы (для показа зеленым)
+            ->orWhere('status', 'completed');
+        });
+        
         // Фильтрация по ролям
         if ($this->isSurveyor()) {
             // Замерщик видит только свои заказы или без назначенного замерщика
@@ -247,9 +288,9 @@ class CalendarApiController extends Controller
     {
         $user = $this->getCurrentUser();
         
-        // Фильтрация по не удалённым заказам
-        $query->whereHas('order', function ($q) {
-            $q->whereNull('deleted_at');
+        // Фильтруем замеры через scope
+        $query->whereHas('order', function($orderQuery) {
+            $orderQuery->whereNull('deleted_at')->inStage('measurement');
         });
         
         // Фильтрация по ролям для замеров
@@ -283,13 +324,36 @@ class CalendarApiController extends Controller
      */
     private function applyContractFilters($query, $filterId)
     {
-        $query->whereHas('order', function($q) use ($filterId) {
-            $q->whereNull('deleted_at');
-            if ($this->isManager() && $filterId) {
-                $q->where('manager_id', $filterId);
-            }
-        });
+         // Показываем незавершенные (через inStage) + завершенные контракты
+         $query->where(function($mainQuery) {
+             // Незавершенные контракты (строгая логика)
+             $mainQuery->whereHas('order', function($orderQuery) {
+                 $orderQuery->inStage('contract');
+             })
+             // ИЛИ подписанные контракты (для показа зеленым)
+             ->orWhere(function($subQuery) {
+                 $subQuery->whereNotNull('signed_at')
+                          ->whereHas('order', function($orderQuery) {
+                              $orderQuery->whereNull('deleted_at')
+                                        ->whereHas('measurement', function($mq) {
+                                            $mq->whereNotNull('measured_at');
+                                        });
+                          });
+             });
+         });
+        
+        if ($this->isManager() && $filterId) {
+            $query->whereHas('order', function($subQuery) use ($filterId) {
+                $subQuery->where('manager_id', $filterId)
+                ->orWhere('surveyor_id', $filterId)
+                ->orWhere('constructor_id', $filterId)
+                ->orWhere('installer_id', $filterId);
+            });
+        }
     }
+
+
+
 
     /**
      * Применить фильтры для документации
@@ -298,8 +362,9 @@ class CalendarApiController extends Controller
     {
         $user = $this->getCurrentUser();
         
-        $query->whereHas('order', function($q) {
-            $q->whereNull('deleted_at');
+        // Фильтруем документацию через scope (только незавершенная)
+        $query->whereHas('order', function($orderQuery) {
+            $orderQuery->whereNull('deleted_at')->inStage('documentation');
         });
 
         // Фильтрация по ролям
@@ -338,8 +403,9 @@ class CalendarApiController extends Controller
     {
         $user = $this->getCurrentUser();
         
-        $query->whereHas('order', function($q) {
-            $q->whereNull('deleted_at');
+        // Фильтруем производство через scope (только незавершенное)
+        $query->whereHas('order', function($orderQuery) {
+            $orderQuery->whereNull('deleted_at')->inStage('production');
         });
 
         // Фильтрация по ролям
@@ -380,8 +446,9 @@ class CalendarApiController extends Controller
     {
         $user = $this->getCurrentUser();
         
-        $query->whereHas('order', function($q) {
-            $q->whereNull('deleted_at');
+        // Фильтруем установки через scope (только незавершенные)
+        $query->whereHas('order', function($orderQuery) {
+            $orderQuery->whereNull('deleted_at')->inStage('installation');
         });
 
         // Фильтрация по ролям
@@ -420,13 +487,14 @@ class CalendarApiController extends Controller
      */
     private function getOrderColor($order)
     {
-        $isActiveOrDone = in_array($order->status, ['in_progress', 'completed']);
-        
-        if ($isActiveOrDone) {
-            return '#4caf50'; // зелёный – выполнено или в работе
+        // Проверяем завершенность через этапы, а не через статус
+        if ($order->installation && $order->installation->installed_at) {
+            return '#4caf50'; // зелёный – установка завершена = заказ завершен
         }
-
-        $deadline = $order->meeting_at ? Carbon::parse($order->meeting_at) : null;
+        
+        // Для всех остальных определяем цвет по дедлайну текущего этапа
+        $deadline = $order->getCurrentStageDate();
+        $deadline = $deadline ? Carbon::parse($deadline) : null;
         return $this->getColorByDeadline($deadline);
     }
 

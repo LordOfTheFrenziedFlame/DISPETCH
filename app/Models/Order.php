@@ -189,4 +189,174 @@ class Order extends Model
 
         return 'Этап в процессе: Не определён';
     }
+
+    /**
+     * Получить дату текущего незавершенного этапа
+     */
+    public function getCurrentStageDate()
+    {
+        // Определяем текущий этап и возвращаем соответствующую дату
+        
+        if (!$this->measurement || !$this->measurement->measured_at) {
+            // Этап: measurement
+            return $this->meeting_at ?? $this->measurement?->initial_meeting_at;
+        }
+        
+        if (!$this->contract || !$this->contract->signed_at) {
+            // Этап: contract  
+            return $this->contract?->documentation_due_at ?? $this->measurement->measured_at;
+        }
+        
+        if (!$this->documentation || !$this->documentation->completed_at) {
+            // Этап: documentation
+            return $this->contract->documentation_due_at ?? $this->contract->signed_at;
+        }
+        
+        if (!$this->production || !$this->production->completed_at) {
+            // Этап: production
+            return $this->contract->ready_date ?? $this->documentation->completed_at;
+        }
+        
+        if (!$this->installation || !$this->installation->installed_at) {
+            // Этап: installation
+            return $this->contract->installation_date ?? $this->production->completed_at;
+        }
+        
+        // Все этапы завершены
+        return $this->installation->installed_at;
+    }
+
+    /**
+     * Scope для фильтрации заказов по текущему этапу
+     * 
+     * ШПАРГАЛКА ПО ЭТАПАМ:
+     * 
+     * 0. order         → все этапы      → СЛОЖНАЯ логика (заказы на любом этапе + завершенные)
+     * 1. measurement   → measured_at    → Простая логика (только незавершенные)
+     * 2. contract      → signed_at      → СЛОЖНАЯ логика (проверка последующих этапов)  
+     * 3. documentation → completed_at   → Простая логика (только незавершенные)
+     * 4. production    → completed_at   → Простая логика (только незавершенные)
+     * 5. installation  → installed_at   → Простая логика (только незавершенные)
+     * 
+     * КАЛЕНДАРИ:
+     * - Orders показывают полный pipeline заказов + завершенные (зеленые)
+     * - Все простые этапы показывают только незавершенные задачи
+     * - Контракты показывают незавершенные (строго) + завершенные (зеленые)
+     * - Цвета: зеленый = завершено, красный/желтый/синий = по дедлайну
+     */
+    public function scopeInStage($query, $stage)
+    {
+        switch ($stage) {
+            case 'measurement':
+                // Просто незавершенный замер
+                return $query->where(function($q) {
+                    $q->whereDoesntHave('measurement')
+                      ->orWhereHas('measurement', function($subQuery) {
+                          $subQuery->whereNull('measured_at');
+                      });
+                });
+                
+            case 'contract':
+                // СЛОЖНАЯ ЛОГИКА: замер готов, контракт не подписан, последующие этапы не завершены
+                return $query->whereHas('measurement', function($q) {
+                    $q->whereNotNull('measured_at');  // Замер завершен!
+                })->where(function($q) {
+                    $q->whereDoesntHave('contract')
+                      ->orWhereHas('contract', function($subQuery) {
+                          $subQuery->whereNull('signed_at');
+                      });
+                })->where(function($q) {
+                    // Проверяем что последующие этапы НЕ завершены
+                    $q->whereDoesntHave('documentation')
+                      ->orWhereHas('documentation', function($subQuery) {
+                          $subQuery->whereNull('completed_at');
+                      });
+                })->where(function($q) {
+                    $q->whereDoesntHave('production')
+                      ->orWhereHas('production', function($subQuery) {
+                          $subQuery->whereNull('completed_at');
+                      });
+                })->where(function($q) {
+                    $q->whereDoesntHave('installation')
+                      ->orWhereHas('installation', function($subQuery) {
+                          $subQuery->whereNull('installed_at');
+                      });
+                });
+                
+            case 'documentation':
+                // Простая логика: только незавершенная документация
+                return $query->where(function($q) {
+                    $q->whereDoesntHave('documentation')
+                      ->orWhereHas('documentation', function($subQuery) {
+                          $subQuery->whereNull('completed_at');
+                      });
+                });
+                
+            case 'production':
+                // Простая логика: только незавершенное производство
+                return $query->where(function($q) {
+                    $q->whereDoesntHave('production')
+                      ->orWhereHas('production', function($subQuery) {
+                          $subQuery->whereNull('completed_at');
+                      });
+                });
+                
+            case 'installation':
+                // Простая логика: только незавершенная установка
+                return $query->where(function($q) {
+                    $q->whereDoesntHave('installation')
+                      ->orWhereHas('installation', function($subQuery) {
+                          $subQuery->whereNull('installed_at');
+                      });
+                });
+
+            case 'order':
+                // Показываем заказы на разных этапах + завершенные
+                return $query->where(function($q) {
+                    // Заказы на этапе замера (нет замера или не завершен)
+                    $q->where(function($subQ) {
+                        $subQ->whereDoesntHave('measurement')
+                             ->orWhereHas('measurement', function($mq) {
+                                 $mq->whereNull('measured_at');
+                             });
+                    })
+                    // ИЛИ заказы на этапе контракта (замер готов, контракт не готов)
+                    ->orWhere(function($subQ) {
+                        $subQ->whereHas('measurement', function($mq) {
+                            $mq->whereNotNull('measured_at');
+                        })->where(function($cq) {
+                            $cq->whereDoesntHave('contract')
+                               ->orWhereHas('contract', function($subQuery) {
+                                   $subQuery->whereNull('signed_at');
+                               });
+                        });
+                    })
+                    // ИЛИ другие этапы работ в процессе
+                    ->orWhere(function($subQ) {
+                        $subQ->whereHas('contract', function($cq) {
+                            $cq->whereNotNull('signed_at');
+                        })->where(function($workQ) {
+                            $workQ->whereDoesntHave('documentation')
+                                  ->orWhereHas('documentation', function($dq) {
+                                      $dq->whereNull('completed_at');
+                                  })
+                                  ->orWhereDoesntHave('production')
+                                  ->orWhereHas('production', function($pq) {
+                                      $pq->whereNull('completed_at');
+                                  })
+                                  ->orWhereDoesntHave('installation')
+                                  ->orWhereHas('installation', function($iq) {
+                                      $iq->whereNull('installed_at');
+                                  });
+                        });
+                    })
+                    // ИЛИ полностью завершенные заказы (зеленые)
+                    ->orWhere('status', 'completed');
+                });
+                
+                
+            default:
+                return $query;
+        }
+    }
 }
